@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Launch AI Studio</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #0A0A0F;
+      --surface: #14141F;
+      --surface2: #1E1E2E;
+      --border: rgba(255,255,255,0.06);
+      --text: #F0F0F5;
+      --text-sec: #8888A0;
+      --text-dim: #55556A;
+    }
+
+    body {
+      font-family: 'Manrope', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes float {
+      0%,100% { transform:translateY(0) scale(1); opacity:.3; }
+      50% { transform:translateY(-15px) scale(1.4); opacity:.7; }
+    }
+
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; min-height: 100vh; }
+
+    /* ---- Header ---- */
+    .header-home { animation: fadeUp .5s ease; }
+    .header-home .label { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+    .header-home h1 { font-size:28px; font-weight:800; line-height:1.2; background:linear-gradient(135deg,#FF6B35,#7C5CFC,#FF3366); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header-home p { color:var(--text-sec); margin-top:8px; font-size:14px; line-height:1.5; }
+
+    .header-inner { display:flex; align-items:center; gap:12px; animation:fadeUp .3s ease; }
+    .btn-back { background:var(--surface2); border:1px solid var(--border); border-radius:12px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); font-size:18px; }
+    .header-inner .subtitle { font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+    .header-inner .title { font-size:20px; font-weight:700; }
+
+    /* ---- Mode Cards ---- */
+    .cards { display:flex; flex-direction:column; gap:16px; margin-top:24px; }
+    .card {
+      background:var(--surface); border:1px solid var(--border); border-radius:20px;
+      padding:24px; text-align:left; cursor:pointer; position:relative; overflow:hidden;
+      transition:all .3s ease;
+    }
+    .card:hover { transform:translateY(-2px); }
+    .card-top { display:flex; align-items:center; justify-content:space-between; }
+    .card-icon { width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:26px; }
+    .card-arrow { width:36px; height:36px; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:16px; }
+    .card-body { margin-top:16px; }
+    .card-body .sub { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
+    .card-body .name { font-size:20px; font-weight:700; }
+    .card-body .desc { font-size:13px; color:var(--text-sec); margin-top:6px; line-height:1.5; }
+
+    /* dots */
+    .dot { position:absolute; border-radius:50%; animation:float 4s ease-in-out infinite; pointer-events:none; }
+
+    /* ---- Form ---- */
+    .form { animation:slideIn .4s ease; margin-top:16px; display:flex; flex-direction:column; gap:18px; }
+    .field-label { font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:8px; letter-spacing:.5px; }
+    .field-input {
+      width:100%; padding:14px 16px; border-radius:14px;
+      border:1px solid var(--border); background:var(--surface); color:var(--text);
+      font-size:14px; font-family:inherit; outline:none; transition:border-color .2s;
+    }
+    .field-input:focus { border-color: rgba(255,255,255,0.15); }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip {
+      padding:10px 16px; border-radius:12px; border:1px solid var(--border);
+      background:var(--surface); color:var(--text-sec); font-weight:400;
+      font-size:13px; cursor:pointer; transition:all .2s; font-family:inherit;
+    }
+    .chip.active { font-weight:600; }
+
+    .btn-generate {
+      width:100%; margin-top:28px; padding:18px 24px; border-radius:16px; border:none;
+      font-weight:700; font-size:16px; cursor:pointer; transition:all .3s;
+      letter-spacing:.5px; font-family:inherit; color:#fff;
+    }
+    .btn-generate:disabled { background:var(--surface2)!important; color:var(--text-dim); cursor:not-allowed; box-shadow:none!important; }
+    .hint { text-align:center; font-size:11px; color:var(--text-dim); margin-top:12px; }
+
+    /* ---- Result ---- */
+    .result-box {
+      background:var(--surface); border:1px solid var(--border); border-radius:20px;
+      padding:24px; min-height:300px; max-height:calc(100vh - 200px); overflow-y:auto;
+      animation:slideIn .4s ease; margin-top:16px;
+    }
+    .result-box h2 { font-size:19px; font-weight:800; margin:20px 0 8px; }
+    .result-box h3 { font-size:16px; font-weight:700; margin:16px 0 6px; }
+    .result-box h4 { font-size:14px; font-weight:700; margin:12px 0 4px; }
+    .result-box p { margin:3px 0; color:var(--text-sec); line-height:1.65; font-size:14px; }
+    .result-box strong { color:var(--text); font-weight:600; }
+    .result-box .bullet { padding-left:16px; position:relative; }
+    .result-box .bullet::before { content:"•"; position:absolute; left:0; }
+    .gen-badge {
+      display:inline-flex; align-items:center; gap:8px;
+      border-radius:10px; padding:8px 14px; font-size:12px; font-weight:600;
+      margin-bottom:12px;
+    }
+    .cursor-blink { animation:blink .8s infinite; }
+    .actions { display:flex; gap:10px; margin-top:16px; animation:fadeUp .3s ease; }
+    .actions button {
+      flex:1; padding:14px 20px; border-radius:14px; font-weight:600;
+      font-size:14px; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .btn-copy { border:1px solid var(--border); background:var(--surface); color:var(--text); }
+    .btn-retry { border:none; color:#fff; }
+
+    .footer { text-align:center; margin-top:32px; animation:fadeUp .5s ease .5s both; }
+    .footer-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:8px 16px; border-radius:10px; background:var(--surface);
+      border:1px solid var(--border); font-size:11px; color:var(--text-dim);
+    }
+
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:2px; }
+  </style>
+</head>
+<body>
+
+<div class="container" id="app"></div>
+
+<script>
+// ============================================================
+// CONFIG — три режима ИИ-агента
+// ============================================================
+const MODES = [
+  {
+    id: "posts",
+    title: "Посты",
+    subtitle: "ИИ-копирайтер",
+    icon: "✍️",
+    color: "#FF6B35",
+    gradient: "linear-gradient(135deg, #FF6B35 0%, #F7C948 100%)",
+    description: "Генерация прогревающих постов, сторис и контент-планов для запуска",
+    fields: [
+      { key:"product", label:"Что запускаем?", placeholder:"Курс по таргету, марафон...", type:"text" },
+      { key:"audience", label:"Целевая аудитория", placeholder:"Женщины 25-35, предприниматели...", type:"text" },
+      { key:"tone", label:"Тон коммуникации", placeholder:"Дружеский, экспертный, провокационный...", type:"text" },
+      { key:"stage", label:"Этап прогрева", type:"select", options:[
+        "Знакомство с экспертом","Осознание проблемы","Демонстрация экспертности",
+        "Кейсы и результаты","Открытие продаж","Дожим и закрытие"
+      ]},
+      { key:"format", label:"Формат", type:"select", options:[
+        "Пост в канал","Серия сторис","Рилс / сценарий","Email-рассылка","Контент-план на неделю"
+      ]},
+    ],
+    systemPrompt: `Ты — эксперт-копирайтер по прогревам и запускам инфопродуктов. Пиши живо, с эмоциями, используй сторителлинг и триггеры. Никакого канцелярита. Текст должен цеплять с первой строки. Используй эмодзи уместно. Пиши на русском. Структурируй: короткие абзацы, воздух.`
+  },
+  {
+    id: "strategy",
+    title: "Стратегия",
+    subtitle: "ИИ-стратег",
+    icon: "🎯",
+    color: "#7C5CFC",
+    gradient: "linear-gradient(135deg, #7C5CFC 0%, #00D4AA 100%)",
+    description: "Пошаговая стратегия запуска с таймлайном, воронками и прогревом",
+    fields: [
+      { key:"product", label:"Продукт", placeholder:"Название и описание продукта...", type:"text" },
+      { key:"price", label:"Ценовой сегмент", placeholder:"5 000 ₽, 50 000 ₽, 150 000 ₽...", type:"text" },
+      { key:"audience", label:"Целевая аудитория", placeholder:"Кто ваш идеальный клиент?", type:"text" },
+      { key:"channels", label:"Площадки", type:"select", options:[
+        "Telegram-канал","Instagram","YouTube","Email-база","Несколько площадок"
+      ]},
+      { key:"timeline", label:"Сроки запуска", type:"select", options:[
+        "Экспресс (7 дней)","Стандарт (14 дней)","Полный цикл (21 день)","Длинный прогрев (30+ дней)"
+      ]},
+      { key:"budget", label:"Бюджет на трафик", placeholder:"0 ₽ (органика), 50 000 ₽...", type:"text" },
+    ],
+    systemPrompt: `Ты — стратег по запускам инфопродуктов с опытом 50+ запусков. Создавай детальные пошаговые стратегии с действиями на каждый день. Включай: воронку, этапы прогрева, метрики, контент-план, точки касания. Конкретные рекомендации. Пиши на русском. Форматируй структурированно.`
+  },
+  {
+    id: "presentation",
+    title: "Презентация",
+    subtitle: "ИИ-спикер",
+    icon: "🎤",
+    color: "#FF3366",
+    gradient: "linear-gradient(135deg, #FF3366 0%, #FF8C42 100%)",
+    description: "Структура и контент продающего вебинара с триггерами и CTA",
+    fields: [
+      { key:"topic", label:"Тема вебинара", placeholder:"О чём будет вебинар?", type:"text" },
+      { key:"product", label:"Что продаём в конце?", placeholder:"Продукт и стоимость...", type:"text" },
+      { key:"duration", label:"Длительность", type:"select", options:["45 минут","60 минут","90 минут","120 минут"]},
+      { key:"audience", label:"Аудитория вебинара", placeholder:"Кто придёт?", type:"text" },
+      { key:"style", label:"Формат", type:"select", options:[
+        "Продающий вебинар","Мастер-класс + продажа","Разбор кейсов + оффер","Интенсив (серия)"
+      ]},
+    ],
+    systemPrompt: `Ты — эксперт по продающим вебинарам. Создавай структуру слайд за слайдом с таймингом. Для каждого слайда: заголовок, тезисы, что говорить, триггеры, переходы. Включай: хук, контент с инсайтами, продажу с оффером, работу с возражениями, CTA. Пиши на русском. Живая подача.`
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = { view: "home", modeId: null, form: {}, generating: false, result: "", streamed: "" };
+
+function getMode() { return MODES.find(m => m.id === state.modeId); }
+
+// ============================================================
+// TELEGRAM WEBAPP INIT
+// ============================================================
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.expand();
+  tg.setHeaderColor("#0A0A0F");
+  tg.setBackgroundColor("#0A0A0F");
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const app = document.getElementById("app");
+
+  if (state.view === "home") {
+    app.innerHTML = renderHome();
+    bindHomeEvents();
+  } else if (state.view === "form") {
+    app.innerHTML = renderFormView();
+    bindFormEvents();
+  } else if (state.view === "result") {
+    app.innerHTML = renderResultView();
+    bindResultEvents();
+  }
+}
+
+// — Home —
+function renderHome() {
+  let cards = MODES.map((m, i) => {
+    let dots = "";
+    for (let d = 0; d < 8; d++) {
+      const s = 4 + Math.random()*6;
+      dots += `<div class="dot" style="width:${s}px;height:${s}px;background:${m.color};left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;opacity:.12"></div>`;
+    }
+    return `
+      <div class="card" data-mode="${m.id}" style="animation:fadeUp .5s ease ${.1+i*.1}s both"
+           onmouseenter="this.style.borderColor='${m.color}30';this.style.boxShadow='0 8px 32px ${m.color}12'"
+           onmouseleave="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+        ${dots}
+        <div style="position:relative;z-index:2">
+          <div class="card-top">
+            <div class="card-icon" style="background:${m.gradient};box-shadow:0 4px 20px ${m.color}30">${m.icon}</div>
+            <div class="card-arrow">→</div>
+          </div>
+          <div class="card-body">
+            <div class="sub" style="color:${m.color}">${m.subtitle}</div>
+            <div class="name">${m.title}</div>
+            <div class="desc">${m.description}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="header-home">
+      <div class="label">Launch AI Studio</div>
+      <h1>Твой ИИ-ассистент<br>для запусков</h1>
+      <p>Выбери режим и получи готовый результат за минуту</p>
+    </div>
+    <div class="cards">${cards}</div>
+    <div class="footer"><div class="footer-badge">⚡ Powered by AI • Claude</div></div>`;
+}
+
+function bindHomeEvents() {
+  document.querySelectorAll(".card[data-mode]").forEach(el => {
+    el.addEventListener("click", () => {
+      state.modeId = el.dataset.mode;
+      state.form = {};
+      state.view = "form";
+      render();
+    });
+  });
+}
+
+// — Form —
+function renderFormView() {
+  const m = getMode();
+  let fields = m.fields.map((f, i) => {
+    if (f.type === "select") {
+      let chips = f.options.map(opt => {
+        const active = state.form[f.key] === opt;
+        return `<button class="chip ${active ? "active" : ""}" data-field="${f.key}" data-val="${opt}"
+                  style="${active ? `border-color:${m.color};background:${m.color}18;color:${m.color}` : ""}">${opt}</button>`;
+      }).join("");
+      return `<div style="animation:fadeUp .4s ease ${i*.05}s both"><div class="field-label">${f.label}</div><div class="chips">${chips}</div></div>`;
+    }
+    return `<div style="animation:fadeUp .4s ease ${i*.05}s both"><div class="field-label">${f.label}</div>
+      <input class="field-input" data-field="${f.key}" placeholder="${f.placeholder}" value="${state.form[f.key]||""}"></div>`;
+  }).join("");
+
+  const filled = Object.keys(state.form).length >= 2;
+
+  return `
+    <div class="header-inner">
+      <button class="btn-back" id="backBtn">←</button>
+      <div>
+        <div class="subtitle" style="color:${m.color}">${m.subtitle}</div>
+        <div class="title">${m.icon} ${m.title}</div>
+      </div>
+    </div>
+    <div class="form">${fields}</div>
+    <button class="btn-generate" id="genBtn" ${filled?"":"disabled"}
+      style="background:${filled ? m.gradient : ""};${filled ? `box-shadow:0 8px 32px ${m.color}30`:""}"
+    >⚡ Сгенерировать</button>
+    <div class="hint">Заполните минимум 2 поля для генерации</div>`;
+}
+
+function bindFormEvents() {
+  document.getElementById("backBtn").addEventListener("click", () => { state.view="home"; render(); });
+
+  document.querySelectorAll(".chip").forEach(el => {
+    el.addEventListener("click", () => {
+      state.form[el.dataset.field] = el.dataset.val;
+      render();
+    });
+  });
+
+  document.querySelectorAll(".field-input").forEach(el => {
+    el.addEventListener("input", () => {
+      if (el.value.trim()) state.form[el.dataset.field] = el.value.trim();
+      else delete state.form[el.dataset.field];
+      // update button state
+      const filled = Object.keys(state.form).length >= 2;
+      const btn = document.getElementById("genBtn");
+      const m = getMode();
+      btn.disabled = !filled;
+      btn.style.background = filled ? m.gradient : "";
+      btn.style.boxShadow = filled ? `0 8px 32px ${m.color}30` : "";
+    });
+  });
+
+  document.getElementById("genBtn").addEventListener("click", generate);
+}
+
+// — Generate —
+async function generate() {
+  const m = getMode();
+  state.generating = true;
+  state.result = "";
+  state.streamed = "";
+  state.view = "result";
+  render();
+
+  const userPrompt = m.fields.map(f => {
+    const v = state.form[f.key];
+    return v ? `${f.label}: ${v}` : null;
+  }).filter(Boolean).join("\n");
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ systemPrompt: m.systemPrompt, userPrompt }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const text = data.text || "Нет результата.";
+    // Streaming effect
+    let i = 0;
+    const iv = setInterval(() => {
+      i += Math.floor(Math.random()*3)+2;
+      if (i >= text.length) {
+        state.streamed = text;
+        state.result = text;
+        state.generating = false;
+        clearInterval(iv);
+        render();
+      } else {
+        state.streamed = text.slice(0, i);
+        updateResultText();
+      }
+    }, 10);
+  } catch (err) {
+    state.streamed = "❌ Ошибка: " + err.message;
+    state.result = "error";
+    state.generating = false;
+    render();
+  }
+}
+
+function updateResultText() {
+  const el = document.getElementById("resultContent");
+  const m = getMode();
+  if (el) {
+    el.innerHTML = formatText(state.streamed) + (state.generating ? `<span class="cursor-blink" style="color:${m.color}">▊</span>` : "");
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+// — Result —
+function renderResultView() {
+  const m = getMode();
+  const badge = state.generating
+    ? `<div class="gen-badge" style="background:${m.color}15;border:1px solid ${m.color}30;color:${m.color}"><span style="animation:pulse 1.2s infinite">●</span> Генерирую...</div>`
+    : "";
+
+  const actions = (!state.generating && state.result && state.result !== "error")
+    ? `<div class="actions">
+         <button class="btn-copy" id="copyBtn">📋 Скопировать</button>
+         <button class="btn-retry" id="retryBtn" style="background:${m.gradient}">🔄 Изменить</button>
+       </div>` : "";
+
+  return `
+    <div class="header-inner">
+      <button class="btn-back" id="backBtn">←</button>
+      <div>
+        <div class="subtitle" style="color:${m.color}">${m.subtitle}</div>
+        <div class="title">${m.icon} ${m.title}</div>
+      </div>
+    </div>
+    <div class="result-box" id="resultContent">
+      ${badge}
+      ${formatText(state.streamed)}
+      ${state.generating ? `<span class="cursor-blink" style="color:${m.color}">▊</span>` : ""}
+    </div>
+    ${actions}`;
+}
+
+function bindResultEvents() {
+  document.getElementById("backBtn")?.addEventListener("click", () => {
+    if (state.generating) return;
+    state.view = "form";
+    render();
+  });
+  document.getElementById("copyBtn")?.addEventListener("click", () => {
+    navigator.clipboard.writeText(state.result);
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = "✅ Скопировано!";
+    setTimeout(() => btn.textContent = "📋 Скопировать", 2000);
+  });
+  document.getElementById("retryBtn")?.addEventListener("click", () => {
+    state.view = "form";
+    render();
+  });
+}
+
+// ============================================================
+// FORMAT TEXT (basic markdown → HTML)
+// ============================================================
+function formatText(text) {
+  return text.split("\n").map(line => {
+    if (line.startsWith("### ")) return `<h4>${esc(line.slice(4))}</h4>`;
+    if (line.startsWith("## ")) return `<h3>${esc(line.slice(3))}</h3>`;
+    if (line.startsWith("# ")) return `<h2>${esc(line.slice(2))}</h2>`;
+    if (line.startsWith("- ") || line.startsWith("• ")) return `<p class="bullet">${inlineBold(esc(line.slice(2)))}</p>`;
+    if (line.match(/^\d+\.\s/)) return `<p>${inlineBold(esc(line))}</p>`;
+    if (line.trim() === "") return `<div style="height:8px"></div>`;
+    return `<p>${inlineBold(esc(line))}</p>`;
+  }).join("");
+}
+
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inlineBold(s) { return s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"); }
+
+// ============================================================
+// START
+// ============================================================
+render();
+</script>
+</body>
+</html>
