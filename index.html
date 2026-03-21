@@ -1,479 +1,692 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Launch AI Studio</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Launch AI Studio</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    :root {
-      --bg: #0A0A0F;
-      --surface: #14141F;
-      --surface2: #1E1E2E;
-      --border: rgba(255,255,255,0.06);
-      --text: #F0F0F5;
-      --text-sec: #8888A0;
-      --text-dim: #55556A;
-    }
+  :root {
+    --bg: #0A0A0F;
+    --surface: #14141F;
+    --surface2: #1E1E2E;
+    --surface3: #282840;
+    --border: rgba(255,255,255,0.06);
+    --text: #F0F0F5;
+    --text-sec: #8888A0;
+    --text-dim: #55556A;
+    --orange: #FF6B35;
+    --purple: #7C5CFC;
+    --pink: #FF3366;
+    --green: #00D4AA;
+    --yellow: #F7C948;
+  }
 
-    body {
-      font-family: 'Manrope', -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+  body {
+    font-family: 'Manrope', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
-    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-    @keyframes float {
-      0%,100% { transform:translateY(0) scale(1); opacity:.3; }
-      50% { transform:translateY(-15px) scale(1.4); opacity:.7; }
-    }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 16px 16px 32px; }
 
-    .container { max-width: 480px; margin: 0 auto; padding: 20px; min-height: 100vh; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+  @keyframes floatDot {
+    0%,100% { transform: translateY(0) scale(1); opacity:.2; }
+    50% { transform: translateY(-15px) scale(1.4); opacity:.6; }
+  }
+  @keyframes glowPulse {
+    0%,100% { box-shadow: 0 0 8px rgba(124,92,252,.3); }
+    50% { box-shadow: 0 0 20px rgba(124,92,252,.6); }
+  }
 
-    /* ---- Header ---- */
-    .header-home { animation: fadeUp .5s ease; }
-    .header-home .label { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
-    .header-home h1 { font-size:28px; font-weight:800; line-height:1.2; background:linear-gradient(135deg,#FF6B35,#7C5CFC,#FF3366); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .header-home p { color:var(--text-sec); margin-top:8px; font-size:14px; line-height:1.5; }
+  .fade-up { animation: fadeUp .4s ease both; }
+  .slide-in { animation: slideIn .4s ease both; }
 
-    .header-inner { display:flex; align-items:center; gap:12px; animation:fadeUp .3s ease; }
-    .btn-back { background:var(--surface2); border:1px solid var(--border); border-radius:12px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); font-size:18px; }
-    .header-inner .subtitle { font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
-    .header-inner .title { font-size:20px; font-weight:700; }
+  .header-back { display: flex; align-items: center; gap: 12px; }
+  .btn-back {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-back:active { transform: scale(.92); }
+  .header-sub { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .header-title { font-size: 20px; font-weight: 700; }
 
-    /* ---- Mode Cards ---- */
-    .cards { display:flex; flex-direction:column; gap:16px; margin-top:24px; }
-    .card {
-      background:var(--surface); border:1px solid var(--border); border-radius:20px;
-      padding:24px; text-align:left; cursor:pointer; position:relative; overflow:hidden;
-      transition:all .3s ease;
-    }
-    .card:hover { transform:translateY(-2px); }
-    .card-top { display:flex; align-items:center; justify-content:space-between; }
-    .card-icon { width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:26px; }
-    .card-arrow { width:36px; height:36px; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:16px; }
-    .card-body { margin-top:16px; }
-    .card-body .sub { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
-    .card-body .name { font-size:20px; font-weight:700; }
-    .card-body .desc { font-size:13px; color:var(--text-sec); margin-top:6px; line-height:1.5; }
+  .logo-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .logo-heading {
+    font-size: 26px; font-weight: 800; line-height: 1.2;
+    background: linear-gradient(135deg, var(--orange), var(--purple), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo-desc { color: var(--text-sec); margin-top: 6px; font-size: 14px; line-height: 1.5; }
 
-    /* dots */
-    .dot { position:absolute; border-radius:50%; animation:float 4s ease-in-out infinite; pointer-events:none; }
+  .settings-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .settings-btn {
+    width: 42px; height: 42px; border-radius: 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-sec); font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; flex-shrink: 0;
+  }
+  .settings-btn:active { transform: scale(.9); }
+  .settings-btn.needs-key {
+    border-color: var(--purple);
+    animation: glowPulse 2s infinite;
+  }
 
-    /* ---- Form ---- */
-    .form { animation:slideIn .4s ease; margin-top:16px; display:flex; flex-direction:column; gap:18px; }
-    .field-label { font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:8px; letter-spacing:.5px; }
-    .field-input {
-      width:100%; padding:14px 16px; border-radius:14px;
-      border:1px solid var(--border); background:var(--surface); color:var(--text);
-      font-size:14px; font-family:inherit; outline:none; transition:border-color .2s;
-    }
-    .field-input:focus { border-color: rgba(255,255,255,0.15); }
-    .chips { display:flex; flex-wrap:wrap; gap:8px; }
-    .chip {
-      padding:10px 16px; border-radius:12px; border:1px solid var(--border);
-      background:var(--surface); color:var(--text-sec); font-weight:400;
-      font-size:13px; cursor:pointer; transition:all .2s; font-family:inherit;
-    }
-    .chip.active { font-weight:600; }
+  .mode-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 22px; cursor: pointer;
+    position: relative; overflow: hidden; transition: all .3s;
+    text-align: left; width: 100%; color: var(--text); font-family: inherit;
+  }
+  .mode-card:active { transform: scale(.97); }
+  .mode-icon {
+    width: 50px; height: 50px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .mode-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .mode-arrow {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--surface2); display: flex;
+    align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 15px;
+  }
+  .mode-sub { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+  .mode-name { font-size: 19px; font-weight: 700; }
+  .mode-desc { font-size: 13px; color: var(--text-sec); margin-top: 5px; line-height: 1.4; }
+  .mode-info { margin-top: 14px; }
+  .dots-container { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .dot { position: absolute; border-radius: 50%; animation: floatDot 4s ease-in-out infinite; }
 
-    .btn-generate {
-      width:100%; margin-top:28px; padding:18px 24px; border-radius:16px; border:none;
-      font-weight:700; font-size:16px; cursor:pointer; transition:all .3s;
-      letter-spacing:.5px; font-family:inherit; color:#fff;
-    }
-    .btn-generate:disabled { background:var(--surface2)!important; color:var(--text-dim); cursor:not-allowed; box-shadow:none!important; }
-    .hint { text-align:center; font-size:11px; color:var(--text-dim); margin-top:12px; }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; letter-spacing: .4px; }
+  .field-input {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .2s;
+  }
+  .field-input:focus { border-color: rgba(255,255,255,0.15); }
+  .field-input::placeholder { color: var(--text-dim); }
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 10px 15px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-sec); font-size: 13px; font-weight: 400;
+    cursor: pointer; transition: all .2s; font-family: inherit;
+  }
+  .chip.active { font-weight: 600; }
 
-    /* ---- Result ---- */
-    .result-box {
-      background:var(--surface); border:1px solid var(--border); border-radius:20px;
-      padding:24px; min-height:300px; max-height:calc(100vh - 200px); overflow-y:auto;
-      animation:slideIn .4s ease; margin-top:16px;
-    }
-    .result-box h2 { font-size:19px; font-weight:800; margin:20px 0 8px; }
-    .result-box h3 { font-size:16px; font-weight:700; margin:16px 0 6px; }
-    .result-box h4 { font-size:14px; font-weight:700; margin:12px 0 4px; }
-    .result-box p { margin:3px 0; color:var(--text-sec); line-height:1.65; font-size:14px; }
-    .result-box strong { color:var(--text); font-weight:600; }
-    .result-box .bullet { padding-left:16px; position:relative; }
-    .result-box .bullet::before { content:"•"; position:absolute; left:0; }
-    .gen-badge {
-      display:inline-flex; align-items:center; gap:8px;
-      border-radius:10px; padding:8px 14px; font-size:12px; font-weight:600;
-      margin-bottom:12px;
-    }
-    .cursor-blink { animation:blink .8s infinite; }
-    .actions { display:flex; gap:10px; margin-top:16px; animation:fadeUp .3s ease; }
-    .actions button {
-      flex:1; padding:14px 20px; border-radius:14px; font-weight:600;
-      font-size:14px; cursor:pointer; font-family:inherit; transition:all .2s;
-    }
-    .btn-copy { border:1px solid var(--border); background:var(--surface); color:var(--text); }
-    .btn-retry { border:none; color:#fff; }
+  .btn-generate {
+    width: 100%; padding: 18px 24px; border-radius: 16px;
+    border: none; color: #fff; font-weight: 700; font-size: 16px;
+    cursor: pointer; font-family: inherit; letter-spacing: .3px; transition: all .3s;
+  }
+  .btn-generate:disabled { background: var(--surface2) !important; color: var(--text-dim); cursor: not-allowed; box-shadow: none !important; }
+  .btn-generate:not(:disabled):active { transform: scale(.97); }
+  .hint { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 10px; }
 
-    .footer { text-align:center; margin-top:32px; animation:fadeUp .5s ease .5s both; }
-    .footer-badge {
-      display:inline-flex; align-items:center; gap:6px;
-      padding:8px 16px; border-radius:10px; background:var(--surface);
-      border:1px solid var(--border); font-size:11px; color:var(--text-dim);
-    }
+  .result-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 22px;
+    max-height: calc(100vh - 200px); overflow-y: auto;
+    font-size: 14px; line-height: 1.7;
+  }
+  .result-box h2 { font-size: 18px; font-weight: 800; margin: 18px 0 6px; color: var(--text); }
+  .result-box h3 { font-size: 16px; font-weight: 700; margin: 14px 0 5px; color: var(--text); }
+  .result-box h4 { font-size: 14px; font-weight: 700; margin: 12px 0 4px; color: var(--text); }
+  .result-box p { margin: 3px 0; color: var(--text-sec); }
+  .result-box strong { color: var(--text); font-weight: 600; }
+  .result-box .spacer { height: 8px; }
+  .result-box .bullet { padding-left: 16px; position: relative; }
+  .result-box .bullet::before { content: "\2022"; position: absolute; left: 0; }
 
-    ::-webkit-scrollbar { width:4px; }
-    ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:2px; }
-  </style>
+  .gen-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border-radius: 10px; font-size: 12px; font-weight: 600;
+  }
+  .gen-dot { animation: pulse 1.2s infinite; }
+  .cursor-blink { animation: blink .8s infinite; }
+
+  .result-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-action {
+    flex: 1; padding: 14px 18px; border-radius: 14px;
+    font-weight: 600; font-size: 14px; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .btn-action:active { transform: scale(.96); }
+  .btn-copy { border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  .btn-retry { border: none; color: #fff; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+  }
+  .settings-panel {
+    width: 100%; max-width: 480px; background: var(--surface);
+    border-radius: 24px 24px 0 0; padding: 24px 20px 40px;
+    animation: fadeUp .3s ease; max-height: 85vh; overflow-y: auto;
+  }
+  .settings-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--surface3); margin: 0 auto 20px; }
+  .settings-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .settings-subtitle { font-size: 13px; color: var(--text-sec); line-height: 1.5; margin-bottom: 18px; }
+  .settings-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; }
+  .settings-input {
+    width: 100%; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .2s;
+  }
+  .settings-input:focus { border-color: rgba(255,255,255,.15); }
+  .settings-input::placeholder { color: var(--text-dim); }
+
+  .provider-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .provider-tab {
+    flex: 1; padding: 12px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-sec); font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all .2s; text-align: center;
+  }
+  .provider-tab.active { border-color: var(--purple); color: var(--purple); background: rgba(124,92,252,.1); }
+
+  .btn-save {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, var(--purple), var(--green));
+    color: #fff; font-weight: 700; font-size: 15px;
+    cursor: pointer; font-family: inherit; margin-top: 18px;
+  }
+  .btn-save:active { transform: scale(.97); }
+
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .status-ok { background: var(--green); }
+  .status-no { background: #FF4444; }
+
+  .footer-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    font-size: 11px; color: var(--text-dim);
+  }
+
+  .key-banner {
+    padding: 16px; border-radius: 16px;
+    background: linear-gradient(135deg, rgba(124,92,252,.12), rgba(0,212,170,.08));
+    border: 1px solid rgba(124,92,252,.25);
+    text-align: center; margin-bottom: 16px; cursor: pointer; transition: all .2s;
+  }
+  .key-banner:active { transform: scale(.98); }
+  .key-banner-icon { font-size: 28px; margin-bottom: 8px; }
+  .key-banner-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .key-banner-desc { font-size: 12px; color: var(--text-sec); line-height: 1.4; }
+
+  .help-block {
+    margin-top: 16px; padding: 14px; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .help-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .help-step { font-size: 12px; color: var(--text-sec); line-height: 1.6; margin-bottom: 4px; }
+  .help-link {
+    display: inline-block; margin-top: 8px; padding: 8px 14px;
+    border-radius: 10px; background: rgba(124,92,252,.15);
+    color: var(--purple); font-size: 12px; font-weight: 600;
+    text-decoration: none;
+  }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 2px; }
+</style>
 </head>
 <body>
 
-<div class="container" id="app"></div>
+<div class="app" id="app"></div>
 
 <script>
-// ============================================================
-// CONFIG — три режима ИИ-агента
-// ============================================================
-const MODES = [
+var tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor('#0A0A0F'); } catch(e){}
+  try { tg.setBackgroundColor('#0A0A0F'); } catch(e){}
+}
+
+var state = {
+  screen: 'home',
+  activeMode: null,
+  formData: {},
+  result: '',
+  streamedText: '',
+  isGenerating: false,
+  showSettings: false,
+  provider: localStorage.getItem('ai_provider') || 'openai',
+  openaiKey: localStorage.getItem('openai_key') || '',
+  claudeKey: localStorage.getItem('claude_key') || '',
+  copied: false,
+};
+
+var firstRun = !state.openaiKey && !state.claudeKey;
+
+var MODES = [
   {
-    id: "posts",
-    title: "Посты",
-    subtitle: "ИИ-копирайтер",
-    icon: "✍️",
-    color: "#FF6B35",
-    gradient: "linear-gradient(135deg, #FF6B35 0%, #F7C948 100%)",
-    description: "Генерация прогревающих постов, сторис и контент-планов для запуска",
+    id: 'posts', title: 'Посты', subtitle: 'ИИ-копирайтер', icon: '\u270D\uFE0F',
+    color: '#FF6B35', gradient: 'linear-gradient(135deg, #FF6B35, #F7C948)',
+    desc: 'Прогревающие посты, сторис и контент-планы для запуска',
     fields: [
-      { key:"product", label:"Что запускаем?", placeholder:"Курс по таргету, марафон...", type:"text" },
-      { key:"audience", label:"Целевая аудитория", placeholder:"Женщины 25-35, предприниматели...", type:"text" },
-      { key:"tone", label:"Тон коммуникации", placeholder:"Дружеский, экспертный, провокационный...", type:"text" },
-      { key:"stage", label:"Этап прогрева", type:"select", options:[
-        "Знакомство с экспертом","Осознание проблемы","Демонстрация экспертности",
-        "Кейсы и результаты","Открытие продаж","Дожим и закрытие"
-      ]},
-      { key:"format", label:"Формат", type:"select", options:[
-        "Пост в канал","Серия сторис","Рилс / сценарий","Email-рассылка","Контент-план на неделю"
-      ]},
+      { key:'product', label:'Что запускаем?', ph:'Курс по таргету, марафон...', type:'text' },
+      { key:'audience', label:'Целевая аудитория', ph:'Женщины 25-35, предприниматели...', type:'text' },
+      { key:'tone', label:'Тон коммуникации', ph:'Дружеский, экспертный...', type:'text' },
+      { key:'stage', label:'Этап прогрева', type:'select', opts:['Знакомство с экспертом','Осознание проблемы','Демонстрация экспертности','Кейсы и результаты','Открытие продаж','Дожим и закрытие'] },
+      { key:'format', label:'Формат', type:'select', opts:['Пост в канал','Серия сторис','Рилс / сценарий','Email-рассылка','Контент-план на неделю'] },
     ],
-    systemPrompt: `Ты — эксперт-копирайтер по прогревам и запускам инфопродуктов. Пиши живо, с эмоциями, используй сторителлинг и триггеры. Никакого канцелярита. Текст должен цеплять с первой строки. Используй эмодзи уместно. Пиши на русском. Структурируй: короткие абзацы, воздух.`
+    system: 'Ты \u2014 эксперт-копирайтер по прогревам и запускам инфопродуктов. Пиши живо, с эмоциями, используй сторителлинг и триггеры. Никакого канцелярита. Текст должен цеплять с первой строки. Эмодзи уместно, но без перебора. Пиши на русском языке. Короткие абзацы, воздух между блоками.'
   },
   {
-    id: "strategy",
-    title: "Стратегия",
-    subtitle: "ИИ-стратег",
-    icon: "🎯",
-    color: "#7C5CFC",
-    gradient: "linear-gradient(135deg, #7C5CFC 0%, #00D4AA 100%)",
-    description: "Пошаговая стратегия запуска с таймлайном, воронками и прогревом",
+    id: 'strategy', title: 'Стратегия', subtitle: 'ИИ-стратег', icon: '\uD83C\uDFAF',
+    color: '#7C5CFC', gradient: 'linear-gradient(135deg, #7C5CFC, #00D4AA)',
+    desc: 'Пошаговая стратегия запуска с таймлайном и воронками',
     fields: [
-      { key:"product", label:"Продукт", placeholder:"Название и описание продукта...", type:"text" },
-      { key:"price", label:"Ценовой сегмент", placeholder:"5 000 ₽, 50 000 ₽, 150 000 ₽...", type:"text" },
-      { key:"audience", label:"Целевая аудитория", placeholder:"Кто ваш идеальный клиент?", type:"text" },
-      { key:"channels", label:"Площадки", type:"select", options:[
-        "Telegram-канал","Instagram","YouTube","Email-база","Несколько площадок"
-      ]},
-      { key:"timeline", label:"Сроки запуска", type:"select", options:[
-        "Экспресс (7 дней)","Стандарт (14 дней)","Полный цикл (21 день)","Длинный прогрев (30+ дней)"
-      ]},
-      { key:"budget", label:"Бюджет на трафик", placeholder:"0 ₽ (органика), 50 000 ₽...", type:"text" },
+      { key:'product', label:'Продукт', ph:'Название и описание...', type:'text' },
+      { key:'price', label:'Ценовой сегмент', ph:'5 000, 50 000, 150 000...', type:'text' },
+      { key:'audience', label:'Целевая аудитория', ph:'Кто ваш идеальный клиент?', type:'text' },
+      { key:'channels', label:'Площадки', type:'select', opts:['Telegram-канал','Instagram','YouTube','Email-база','Несколько площадок'] },
+      { key:'timeline', label:'Сроки запуска', type:'select', opts:['Экспресс (7 дней)','Стандарт (14 дней)','Полный цикл (21 день)','Длинный прогрев (30+ дней)'] },
+      { key:'budget', label:'Бюджет на трафик', ph:'0 (органика), 50 000...', type:'text' },
     ],
-    systemPrompt: `Ты — стратег по запускам инфопродуктов с опытом 50+ запусков. Создавай детальные пошаговые стратегии с действиями на каждый день. Включай: воронку, этапы прогрева, метрики, контент-план, точки касания. Конкретные рекомендации. Пиши на русском. Форматируй структурированно.`
+    system: 'Ты \u2014 стратег по запускам инфопродуктов с опытом 50+ успешных запусков. Создавай детальные пошаговые стратегии с конкретными действиями на каждый день. Включай: воронку продаж, этапы прогрева, ключевые метрики, контент-план, точки касания. Конкретные рекомендации, а не абстрактные советы. Учитывай бюджет и сроки. Пиши на русском. Форматируй структурированно.'
   },
   {
-    id: "presentation",
-    title: "Презентация",
-    subtitle: "ИИ-спикер",
-    icon: "🎤",
-    color: "#FF3366",
-    gradient: "linear-gradient(135deg, #FF3366 0%, #FF8C42 100%)",
-    description: "Структура и контент продающего вебинара с триггерами и CTA",
+    id: 'presentation', title: 'Презентация', subtitle: 'ИИ-спикер', icon: '\uD83C\uDFA4',
+    color: '#FF3366', gradient: 'linear-gradient(135deg, #FF3366, #FF8C42)',
+    desc: 'Структура продающего вебинара с триггерами и CTA',
     fields: [
-      { key:"topic", label:"Тема вебинара", placeholder:"О чём будет вебинар?", type:"text" },
-      { key:"product", label:"Что продаём в конце?", placeholder:"Продукт и стоимость...", type:"text" },
-      { key:"duration", label:"Длительность", type:"select", options:["45 минут","60 минут","90 минут","120 минут"]},
-      { key:"audience", label:"Аудитория вебинара", placeholder:"Кто придёт?", type:"text" },
-      { key:"style", label:"Формат", type:"select", options:[
-        "Продающий вебинар","Мастер-класс + продажа","Разбор кейсов + оффер","Интенсив (серия)"
-      ]},
+      { key:'topic', label:'Тема вебинара', ph:'О чём будет вебинар?', type:'text' },
+      { key:'product', label:'Что продаём в конце?', ph:'Название и стоимость...', type:'text' },
+      { key:'duration', label:'Длительность', type:'select', opts:['45 минут','60 минут','90 минут','120 минут'] },
+      { key:'audience', label:'Аудитория вебинара', ph:'Кто придёт?', type:'text' },
+      { key:'style', label:'Формат', type:'select', opts:['Продающий вебинар','Мастер-класс + продажа','Разбор кейсов + оффер','Интенсив (серия)'] },
     ],
-    systemPrompt: `Ты — эксперт по продающим вебинарам. Создавай структуру слайд за слайдом с таймингом. Для каждого слайда: заголовок, тезисы, что говорить, триггеры, переходы. Включай: хук, контент с инсайтами, продажу с оффером, работу с возражениями, CTA. Пиши на русском. Живая подача.`
+    system: 'Ты \u2014 эксперт по продающим вебинарам и презентациям. Создавай структуру вебинара слайд за слайдом с таймингом. Для каждого слайда: заголовок, тезисы, что говорить спикеру, триггеры и переходы. Включай: хук в начале, контентную часть, продающую часть с оффером, работу с возражениями, CTA. Пиши на русском. Делай живой и вовлекающей.'
   }
 ];
 
-// ============================================================
-// STATE
-// ============================================================
-let state = { view: "home", modeId: null, form: {}, generating: false, result: "", streamed: "" };
-
-function getMode() { return MODES.find(m => m.id === state.modeId); }
-
-// ============================================================
-// TELEGRAM WEBAPP INIT
-// ============================================================
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.expand();
-  tg.setHeaderColor("#0A0A0F");
-  tg.setBackgroundColor("#0A0A0F");
-}
-
-// ============================================================
-// RENDER
-// ============================================================
-function render() {
-  const app = document.getElementById("app");
-
-  if (state.view === "home") {
-    app.innerHTML = renderHome();
-    bindHomeEvents();
-  } else if (state.view === "form") {
-    app.innerHTML = renderFormView();
-    bindFormEvents();
-  } else if (state.view === "result") {
-    app.innerHTML = renderResultView();
-    bindResultEvents();
-  }
-}
-
-// — Home —
-function renderHome() {
-  let cards = MODES.map((m, i) => {
-    let dots = "";
-    for (let d = 0; d < 8; d++) {
-      const s = 4 + Math.random()*6;
-      dots += `<div class="dot" style="width:${s}px;height:${s}px;background:${m.color};left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;opacity:.12"></div>`;
-    }
-    return `
-      <div class="card" data-mode="${m.id}" style="animation:fadeUp .5s ease ${.1+i*.1}s both"
-           onmouseenter="this.style.borderColor='${m.color}30';this.style.boxShadow='0 8px 32px ${m.color}12'"
-           onmouseleave="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
-        ${dots}
-        <div style="position:relative;z-index:2">
-          <div class="card-top">
-            <div class="card-icon" style="background:${m.gradient};box-shadow:0 4px 20px ${m.color}30">${m.icon}</div>
-            <div class="card-arrow">→</div>
-          </div>
-          <div class="card-body">
-            <div class="sub" style="color:${m.color}">${m.subtitle}</div>
-            <div class="name">${m.title}</div>
-            <div class="desc">${m.description}</div>
-          </div>
-        </div>
-      </div>`;
-  }).join("");
-
-  return `
-    <div class="header-home">
-      <div class="label">Launch AI Studio</div>
-      <h1>Твой ИИ-ассистент<br>для запусков</h1>
-      <p>Выбери режим и получи готовый результат за минуту</p>
-    </div>
-    <div class="cards">${cards}</div>
-    <div class="footer"><div class="footer-badge">⚡ Powered by AI • Claude</div></div>`;
-}
-
-function bindHomeEvents() {
-  document.querySelectorAll(".card[data-mode]").forEach(el => {
-    el.addEventListener("click", () => {
-      state.modeId = el.dataset.mode;
-      state.form = {};
-      state.view = "form";
-      render();
+function callOpenAI(systemPrompt, userPrompt) {
+  return fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.openaiKey },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      max_tokens: 4000, temperature: 0.8,
+    })
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) {
+      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'Ошибка OpenAI: ' + res.status); }
+      catch(ex) { if (ex.message.indexOf('Ошибка') >= 0) throw ex; throw new Error('Ошибка OpenAI: ' + res.status + '. Проверьте ключ и баланс.'); }
     });
-  });
+    return res.json();
+  }).then(function(data) { return data.choices[0].message.content; });
 }
 
-// — Form —
-function renderFormView() {
-  const m = getMode();
-  let fields = m.fields.map((f, i) => {
-    if (f.type === "select") {
-      let chips = f.options.map(opt => {
-        const active = state.form[f.key] === opt;
-        return `<button class="chip ${active ? "active" : ""}" data-field="${f.key}" data-val="${opt}"
-                  style="${active ? `border-color:${m.color};background:${m.color}18;color:${m.color}` : ""}">${opt}</button>`;
-      }).join("");
-      return `<div style="animation:fadeUp .4s ease ${i*.05}s both"><div class="field-label">${f.label}</div><div class="chips">${chips}</div></div>`;
-    }
-    return `<div style="animation:fadeUp .4s ease ${i*.05}s both"><div class="field-label">${f.label}</div>
-      <input class="field-input" data-field="${f.key}" placeholder="${f.placeholder}" value="${state.form[f.key]||""}"></div>`;
-  }).join("");
-
-  const filled = Object.keys(state.form).length >= 2;
-
-  return `
-    <div class="header-inner">
-      <button class="btn-back" id="backBtn">←</button>
-      <div>
-        <div class="subtitle" style="color:${m.color}">${m.subtitle}</div>
-        <div class="title">${m.icon} ${m.title}</div>
-      </div>
-    </div>
-    <div class="form">${fields}</div>
-    <button class="btn-generate" id="genBtn" ${filled?"":"disabled"}
-      style="background:${filled ? m.gradient : ""};${filled ? `box-shadow:0 8px 32px ${m.color}30`:""}"
-    >⚡ Сгенерировать</button>
-    <div class="hint">Заполните минимум 2 поля для генерации</div>`;
-}
-
-function bindFormEvents() {
-  document.getElementById("backBtn").addEventListener("click", () => { state.view="home"; render(); });
-
-  document.querySelectorAll(".chip").forEach(el => {
-    el.addEventListener("click", () => {
-      state.form[el.dataset.field] = el.dataset.val;
-      render();
+function callClaude(systemPrompt, userPrompt) {
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.claudeKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) {
+      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'Ошибка Claude: ' + res.status); }
+      catch(ex) { if (ex.message.indexOf('Ошибка') >= 0) throw ex; throw new Error('Ошибка Claude: ' + res.status + '. Проверьте ключ.'); }
     });
-  });
-
-  document.querySelectorAll(".field-input").forEach(el => {
-    el.addEventListener("input", () => {
-      if (el.value.trim()) state.form[el.dataset.field] = el.value.trim();
-      else delete state.form[el.dataset.field];
-      // update button state
-      const filled = Object.keys(state.form).length >= 2;
-      const btn = document.getElementById("genBtn");
-      const m = getMode();
-      btn.disabled = !filled;
-      btn.style.background = filled ? m.gradient : "";
-      btn.style.boxShadow = filled ? `0 8px 32px ${m.color}30` : "";
-    });
-  });
-
-  document.getElementById("genBtn").addEventListener("click", generate);
+    return res.json();
+  }).then(function(data) { return data.content.map(function(c) { return c.text || ''; }).join('\n'); });
 }
 
-// — Generate —
-async function generate() {
-  const m = getMode();
-  state.generating = true;
-  state.result = "";
-  state.streamed = "";
-  state.view = "result";
+function generate() {
+  var mode = MODES.find(function(m) { return m.id === state.activeMode; });
+  if (!mode) return;
+  var hasKey = state.provider === 'openai' ? !!state.openaiKey : !!state.claudeKey;
+  if (!hasKey) { state.showSettings = true; render(); return; }
+
+  state.isGenerating = true;
+  state.result = '';
+  state.streamedText = '';
+  state.screen = 'result';
   render();
 
-  const userPrompt = m.fields.map(f => {
-    const v = state.form[f.key];
-    return v ? `${f.label}: ${v}` : null;
-  }).filter(Boolean).join("\n");
+  var userPrompt = mode.fields.map(function(f) {
+    var v = state.formData[f.key];
+    return v ? f.label + ': ' + v : null;
+  }).filter(Boolean).join('\n');
 
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ systemPrompt: m.systemPrompt, userPrompt }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+  var call = state.provider === 'openai' ? callOpenAI(mode.system, userPrompt) : callClaude(mode.system, userPrompt);
 
-    const text = data.text || "Нет результата.";
-    // Streaming effect
-    let i = 0;
-    const iv = setInterval(() => {
-      i += Math.floor(Math.random()*3)+2;
+  call.then(function(text) {
+    var i = 0;
+    var iv = setInterval(function() {
+      i += Math.floor(Math.random() * 4) + 2;
       if (i >= text.length) {
-        state.streamed = text;
+        state.streamedText = text;
         state.result = text;
-        state.generating = false;
+        state.isGenerating = false;
         clearInterval(iv);
-        render();
       } else {
-        state.streamed = text.slice(0, i);
-        updateResultText();
+        state.streamedText = text.slice(0, i);
       }
+      render();
     }, 10);
-  } catch (err) {
-    state.streamed = "❌ Ошибка: " + err.message;
-    state.result = "error";
-    state.generating = false;
+  }).catch(function(err) {
+    state.streamedText = '\u274C ' + err.message + '\n\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u2190 \u0438 \u0437\u0430\u0442\u0435\u043C \u2699\uFE0F \u0447\u0442\u043E\u0431\u044B \u043F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C API-\u043A\u043B\u044E\u0447.';
+    state.result = 'error';
+    state.isGenerating = false;
     render();
+  });
+}
+
+function h(tag, attrs) {
+  var el = document.createElement(tag);
+  var children = Array.prototype.slice.call(arguments, 2);
+  if (attrs) {
+    Object.keys(attrs).forEach(function(k) {
+      var v = attrs[k];
+      if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k.indexOf('on') === 0) el.addEventListener(k.slice(2).toLowerCase(), v);
+      else if (k === 'className') el.className = v;
+      else el.setAttribute(k, v);
+    });
+  }
+  children.forEach(function(c) {
+    if (Array.isArray(c)) c.forEach(function(cc) { if (cc != null && cc !== false) el.appendChild(typeof cc === 'string' ? document.createTextNode(cc) : cc); });
+    else if (c != null && c !== false) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return el;
+}
+
+function renderDots(color) {
+  var wrap = h('div', { className: 'dots-container' });
+  for (var i = 0; i < 8; i++) {
+    var s = 3 + Math.random() * 6;
+    wrap.appendChild(h('div', { className: 'dot', style: {
+      width: s+'px', height: s+'px', background: color,
+      left: (Math.random()*100)+'%', top: (Math.random()*100)+'%',
+      animationDelay: (Math.random()*3)+'s', animationDuration: (3+Math.random()*3)+'s',
+    }}));
+  }
+  return wrap;
+}
+
+function parseMarkdown(text) {
+  var frag = document.createDocumentFragment();
+  text.split('\n').forEach(function(line) {
+    if (line.indexOf('### ') === 0) frag.appendChild(h('h4', {}, line.slice(4)));
+    else if (line.indexOf('## ') === 0) frag.appendChild(h('h3', {}, line.slice(3)));
+    else if (line.indexOf('# ') === 0) frag.appendChild(h('h2', {}, line.slice(2)));
+    else if (line.indexOf('- ') === 0 || line.indexOf('\u2022 ') === 0) frag.appendChild(h('p', { className: 'bullet' }, line.slice(2)));
+    else if (line.trim() === '') frag.appendChild(h('div', { className: 'spacer' }));
+    else {
+      var p = h('p', {});
+      line.split(/(\*\*[^*]+\*\*)/g).forEach(function(part) {
+        if (part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2)
+          p.appendChild(h('strong', {}, part.slice(2, -2)));
+        else p.appendChild(document.createTextNode(part));
+      });
+      frag.appendChild(p);
+    }
+  });
+  return frag;
+}
+
+function render() {
+  var app = document.getElementById('app');
+  app.innerHTML = '';
+
+  var mode = MODES.find(function(m) { return m.id === state.activeMode; });
+  var hasKey = state.provider === 'openai' ? !!state.openaiKey : !!state.claudeKey;
+
+  // SETTINGS OVERLAY
+  if (state.showSettings) {
+    var overlay = h('div', { className: 'overlay', onClick: function(e) {
+      if (e.target === e.currentTarget) { state.showSettings = false; render(); }
+    }});
+
+    var keyInput = h('input', {
+      className: 'settings-input',
+      type: 'password',
+      placeholder: state.provider === 'openai' ? 'sk-...' : 'sk-ant-...',
+      value: state.provider === 'openai' ? state.openaiKey : state.claudeKey,
+    });
+    keyInput.addEventListener('input', function(e) {
+      if (state.provider === 'openai') state.openaiKey = e.target.value;
+      else state.claudeKey = e.target.value;
+    });
+
+    var helpSteps = state.provider === 'openai' ? [
+      h('div', { className: 'help-step' }, '1. \u041F\u0435\u0440\u0435\u0439\u0434\u0438\u0442\u0435 \u043D\u0430 platform.openai.com'),
+      h('div', { className: 'help-step' }, '2. \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0439\u0442\u0435\u0441\u044C \u0438\u043B\u0438 \u0432\u043E\u0439\u0434\u0438\u0442\u0435'),
+      h('div', { className: 'help-step' }, '3. API Keys \u2192 Create new secret key'),
+      h('div', { className: 'help-step' }, '4. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
+      h('a', { className: 'help-link', href: 'https://platform.openai.com/api-keys', target: '_blank' }, '\u2192 \u041E\u0442\u043A\u0440\u044B\u0442\u044C OpenAI'),
+    ] : [
+      h('div', { className: 'help-step' }, '1. \u041F\u0435\u0440\u0435\u0439\u0434\u0438\u0442\u0435 \u043D\u0430 console.anthropic.com'),
+      h('div', { className: 'help-step' }, '2. \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0439\u0442\u0435\u0441\u044C \u0438\u043B\u0438 \u0432\u043E\u0439\u0434\u0438\u0442\u0435'),
+      h('div', { className: 'help-step' }, '3. API Keys \u2192 Create Key'),
+      h('div', { className: 'help-step' }, '4. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
+      h('a', { className: 'help-link', href: 'https://console.anthropic.com/', target: '_blank' }, '\u2192 \u041E\u0442\u043A\u0440\u044B\u0442\u044C Anthropic'),
+    ];
+
+    var panel = h('div', { className: 'settings-panel' },
+      h('div', { className: 'settings-handle' }),
+      h('div', { className: 'settings-title' }, '\u2699\uFE0F \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438'),
+      h('div', { className: 'settings-subtitle' }, '\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0418\u0418 \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 API-\u043A\u043B\u044E\u0447. \u041A\u043B\u044E\u0447 \u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435.'),
+      h('div', { className: 'provider-tabs' },
+        h('button', {
+          className: 'provider-tab' + (state.provider === 'openai' ? ' active' : ''),
+          onClick: function() { state.provider = 'openai'; localStorage.setItem('ai_provider', 'openai'); render(); }
+        }, '\uD83D\uDFE2 OpenAI'),
+        h('button', {
+          className: 'provider-tab' + (state.provider === 'claude' ? ' active' : ''),
+          onClick: function() { state.provider = 'claude'; localStorage.setItem('ai_provider', 'claude'); render(); }
+        }, '\uD83D\uDFE3 Claude'),
+      ),
+      h('div', { style: { marginBottom: '16px', fontSize: '13px' } },
+        h('span', { className: 'status-dot ' + (hasKey ? 'status-ok' : 'status-no') }),
+        hasKey ? '\u041A\u043B\u044E\u0447 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u2713' : '\u041A\u043B\u044E\u0447 \u043D\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D'
+      ),
+      h('div', { style: { marginBottom: '14px' } },
+        h('div', { className: 'settings-label' }, state.provider === 'openai' ? 'API-\u043A\u043B\u044E\u0447 OpenAI' : 'API-\u043A\u043B\u044E\u0447 Claude'),
+        keyInput
+      ),
+      h('div', { className: 'help-block' },
+        h('div', { className: 'help-title' }, '\uD83D\uDCD6 \u041A\u0430\u043A \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043A\u043B\u044E\u0447:'),
+        helpSteps
+      ),
+      h('button', { className: 'btn-save', onClick: function() {
+        localStorage.setItem('openai_key', state.openaiKey);
+        localStorage.setItem('claude_key', state.claudeKey);
+        state.showSettings = false;
+        firstRun = false;
+        render();
+      }}, '\uD83D\uDCBE \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C')
+    );
+
+    overlay.appendChild(panel);
+    app.appendChild(overlay);
+  }
+
+  // SETTINGS BUTTON ROW
+  var settingsRow = h('div', { className: 'settings-row' });
+  settingsRow.appendChild(h('button', {
+    className: 'settings-btn' + (!hasKey ? ' needs-key' : ''),
+    onClick: function() { state.showSettings = true; render(); }
+  }, '\u2699\uFE0F'));
+  app.appendChild(settingsRow);
+
+  // HEADER
+  var header = h('div', { style: { marginBottom: '4px' } });
+  if (state.screen !== 'home' && mode) {
+    header.appendChild(h('div', { className: 'header-back fade-up' },
+      h('button', { className: 'btn-back', onClick: function() {
+        if (state.screen === 'result') { state.screen = 'form'; state.result = ''; state.streamedText = ''; }
+        else { state.screen = 'home'; state.activeMode = null; state.formData = {}; }
+        render();
+      }}, '\u2190'),
+      h('div', {},
+        h('div', { className: 'header-sub', style: { color: mode.color } }, mode.subtitle),
+        h('div', { className: 'header-title' }, mode.icon + ' ' + mode.title)
+      )
+    ));
+  } else {
+    header.appendChild(h('div', { className: 'fade-up' },
+      h('div', { className: 'logo-label' }, 'Launch AI Studio'),
+      h('div', { className: 'logo-heading' }, '\u0422\u0432\u043E\u0439 \u0418\u0418-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442'),
+      h('div', { className: 'logo-heading' }, '\u0434\u043B\u044F \u0437\u0430\u043F\u0443\u0441\u043A\u043E\u0432'),
+      h('p', { className: 'logo-desc' }, '\u0412\u044B\u0431\u0435\u0440\u0438 \u0440\u0435\u0436\u0438\u043C \u0438 \u043F\u043E\u043B\u0443\u0447\u0438 \u0433\u043E\u0442\u043E\u0432\u044B\u0439 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u0437\u0430 \u043C\u0438\u043D\u0443\u0442\u0443')
+    ));
+  }
+  app.appendChild(header);
+
+  // CONTENT
+  var content = h('div', { style: { marginTop: '16px' } });
+
+  if (state.screen === 'home') {
+    if (!hasKey) {
+      content.appendChild(h('div', {
+        className: 'key-banner fade-up',
+        onClick: function() { state.showSettings = true; render(); }
+      },
+        h('div', { className: 'key-banner-icon' }, '\uD83D\uDD11'),
+        h('div', { className: 'key-banner-title' }, '\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0434\u043E\u0431\u0430\u0432\u044C\u0442\u0435 API-\u043A\u043B\u044E\u0447'),
+        h('div', { className: 'key-banner-desc' }, '\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0441\u044E\u0434\u0430, \u0447\u0442\u043E\u0431\u044B \u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0418\u0418. \u042D\u0442\u043E \u0437\u0430\u0439\u043C\u0451\u0442 2 \u043C\u0438\u043D\u0443\u0442\u044B.')
+      ));
+    }
+
+    MODES.forEach(function(m, idx) {
+      content.appendChild(h('button', {
+        className: 'mode-card fade-up',
+        style: { animationDelay: (idx * .08) + 's', display: 'block', marginBottom: '14px' },
+        onClick: function() {
+          if (!hasKey) { state.showSettings = true; render(); return; }
+          state.activeMode = m.id; state.screen = 'form'; state.formData = {}; render();
+        }
+      },
+        renderDots(m.color),
+        h('div', { style: { position: 'relative', zIndex: '2' } },
+          h('div', { className: 'mode-card-top' },
+            h('div', { className: 'mode-icon', style: { background: m.gradient, boxShadow: '0 4px 20px ' + m.color + '30' } }, m.icon),
+            h('div', { className: 'mode-arrow' }, '\u2192')
+          ),
+          h('div', { className: 'mode-info' },
+            h('div', { className: 'mode-sub', style: { color: m.color } }, m.subtitle),
+            h('div', { className: 'mode-name' }, m.title),
+            h('div', { className: 'mode-desc' }, m.desc)
+          )
+        )
+      ));
+    });
+
+    content.appendChild(h('div', { style: { textAlign: 'center', marginTop: '16px' }, className: 'fade-up' },
+      h('span', { className: 'footer-badge' }, '\u26A1 ' + (state.provider === 'openai' ? 'OpenAI' : 'Claude'))
+    ));
+
+  } else if (state.screen === 'form' && mode) {
+    mode.fields.forEach(function(f, idx) {
+      var fw = h('div', { className: 'slide-in', style: { marginBottom: '16px', animationDelay: (idx * .04) + 's' } });
+      fw.appendChild(h('div', { className: 'field-label' }, f.label));
+
+      if (f.type === 'select') {
+        var chips = h('div', { className: 'chip-wrap' });
+        f.opts.forEach(function(opt) {
+          var active = state.formData[f.key] === opt;
+          chips.appendChild(h('button', {
+            className: 'chip' + (active ? ' active' : ''),
+            style: active ? { borderColor: mode.color, color: mode.color, background: mode.color + '15' } : {},
+            onClick: function() { state.formData[f.key] = opt; render(); }
+          }, opt));
+        });
+        fw.appendChild(chips);
+      } else {
+        var inp = h('input', { className: 'field-input', type: 'text', placeholder: f.ph || '', value: state.formData[f.key] || '' });
+        inp.addEventListener('input', function(e) { state.formData[f.key] = e.target.value; });
+        inp.addEventListener('focus', function() { inp.style.borderColor = mode.color + '50'; });
+        inp.addEventListener('blur', function() { inp.style.borderColor = 'rgba(255,255,255,0.06)'; });
+        fw.appendChild(inp);
+      }
+      content.appendChild(fw);
+    });
+
+    var filled = Object.values(state.formData).filter(function(v) { return v && v.trim(); }).length;
+    content.appendChild(h('button', {
+      className: 'btn-generate',
+      style: { background: filled >= 2 ? mode.gradient : undefined, boxShadow: filled >= 2 ? '0 8px 32px ' + mode.color + '30' : undefined, marginTop: '24px' },
+      disabled: filled < 2 ? 'disabled' : undefined,
+      onClick: generate,
+    }, '\u26A1 \u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C'));
+    content.appendChild(h('p', { className: 'hint' }, '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u043C\u0438\u043D\u0438\u043C\u0443\u043C 2 \u043F\u043E\u043B\u044F'));
+
+  } else if (state.screen === 'result' && mode) {
+    var box = h('div', { className: 'result-box slide-in' });
+    if (state.isGenerating) {
+      box.appendChild(h('div', {
+        className: 'gen-badge',
+        style: { background: mode.color + '15', border: '1px solid ' + mode.color + '30', color: mode.color, marginBottom: '12px' }
+      }, h('span', { className: 'gen-dot' }, '\u25CF'), ' \u0413\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u044E...'));
+    }
+    box.appendChild(parseMarkdown(state.streamedText));
+    if (state.isGenerating) box.appendChild(h('span', { className: 'cursor-blink', style: { color: mode.color } }, '\u2588'));
+    content.appendChild(box);
+
+    if (!state.isGenerating && state.result && state.result !== 'error') {
+      var actions = h('div', { className: 'result-actions fade-up' });
+      actions.appendChild(h('button', {
+        className: 'btn-action btn-copy',
+        onClick: function() {
+          navigator.clipboard.writeText(state.result).then(function() {
+            state.copied = true; render();
+            setTimeout(function() { state.copied = false; render(); }, 1500);
+          });
+        }
+      }, state.copied ? '\u2705 \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!' : '\uD83D\uDCCB \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C'));
+      actions.appendChild(h('button', {
+        className: 'btn-action btn-retry',
+        style: { background: mode.gradient },
+        onClick: function() { state.screen = 'form'; render(); }
+      }, '\uD83D\uDD04 \u0418\u0437\u043C\u0435\u043D\u0438\u0442\u044C'));
+      content.appendChild(actions);
+    }
+  }
+
+  app.appendChild(content);
+
+  if (firstRun) {
+    firstRun = false;
+    setTimeout(function() { state.showSettings = true; render(); }, 600);
   }
 }
 
-function updateResultText() {
-  const el = document.getElementById("resultContent");
-  const m = getMode();
-  if (el) {
-    el.innerHTML = formatText(state.streamed) + (state.generating ? `<span class="cursor-blink" style="color:${m.color}">▊</span>` : "");
-    el.scrollTop = el.scrollHeight;
-  }
-}
-
-// — Result —
-function renderResultView() {
-  const m = getMode();
-  const badge = state.generating
-    ? `<div class="gen-badge" style="background:${m.color}15;border:1px solid ${m.color}30;color:${m.color}"><span style="animation:pulse 1.2s infinite">●</span> Генерирую...</div>`
-    : "";
-
-  const actions = (!state.generating && state.result && state.result !== "error")
-    ? `<div class="actions">
-         <button class="btn-copy" id="copyBtn">📋 Скопировать</button>
-         <button class="btn-retry" id="retryBtn" style="background:${m.gradient}">🔄 Изменить</button>
-       </div>` : "";
-
-  return `
-    <div class="header-inner">
-      <button class="btn-back" id="backBtn">←</button>
-      <div>
-        <div class="subtitle" style="color:${m.color}">${m.subtitle}</div>
-        <div class="title">${m.icon} ${m.title}</div>
-      </div>
-    </div>
-    <div class="result-box" id="resultContent">
-      ${badge}
-      ${formatText(state.streamed)}
-      ${state.generating ? `<span class="cursor-blink" style="color:${m.color}">▊</span>` : ""}
-    </div>
-    ${actions}`;
-}
-
-function bindResultEvents() {
-  document.getElementById("backBtn")?.addEventListener("click", () => {
-    if (state.generating) return;
-    state.view = "form";
-    render();
-  });
-  document.getElementById("copyBtn")?.addEventListener("click", () => {
-    navigator.clipboard.writeText(state.result);
-    const btn = document.getElementById("copyBtn");
-    btn.textContent = "✅ Скопировано!";
-    setTimeout(() => btn.textContent = "📋 Скопировать", 2000);
-  });
-  document.getElementById("retryBtn")?.addEventListener("click", () => {
-    state.view = "form";
-    render();
-  });
-}
-
-// ============================================================
-// FORMAT TEXT (basic markdown → HTML)
-// ============================================================
-function formatText(text) {
-  return text.split("\n").map(line => {
-    if (line.startsWith("### ")) return `<h4>${esc(line.slice(4))}</h4>`;
-    if (line.startsWith("## ")) return `<h3>${esc(line.slice(3))}</h3>`;
-    if (line.startsWith("# ")) return `<h2>${esc(line.slice(2))}</h2>`;
-    if (line.startsWith("- ") || line.startsWith("• ")) return `<p class="bullet">${inlineBold(esc(line.slice(2)))}</p>`;
-    if (line.match(/^\d+\.\s/)) return `<p>${inlineBold(esc(line))}</p>`;
-    if (line.trim() === "") return `<div style="height:8px"></div>`;
-    return `<p>${inlineBold(esc(line))}</p>`;
-  }).join("");
-}
-
-function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function inlineBold(s) { return s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"); }
-
-// ============================================================
-// START
-// ============================================================
 render();
 </script>
 </body>
