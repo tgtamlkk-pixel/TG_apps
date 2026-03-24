@@ -83,10 +83,7 @@
     transition: all .2s; flex-shrink: 0;
   }
   .settings-btn:active { transform: scale(.9); }
-  .settings-btn.needs-key {
-    border-color: var(--purple);
-    animation: glowPulse 2s infinite;
-  }
+  .settings-btn.needs-key { border-color: var(--purple); animation: glowPulse 2s infinite; }
 
   .mode-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -123,6 +120,17 @@
   }
   .field-input:focus { border-color: rgba(255,255,255,0.15); }
   .field-input::placeholder { color: var(--text-dim); }
+
+  .field-textarea {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .2s;
+    resize: vertical; min-height: 80px; line-height: 1.5;
+  }
+  .field-textarea:focus { border-color: rgba(255,255,255,0.15); }
+  .field-textarea::placeholder { color: var(--text-dim); }
+
   .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 15px; border-radius: 12px;
@@ -137,8 +145,9 @@
     border: none; color: #fff; font-weight: 700; font-size: 16px;
     cursor: pointer; font-family: inherit; letter-spacing: .3px; transition: all .3s;
   }
-  .btn-generate:disabled { background: var(--surface2) !important; color: var(--text-dim); cursor: not-allowed; box-shadow: none !important; }
-  .btn-generate:not(:disabled):active { transform: scale(.97); }
+  .btn-generate.ready { cursor: pointer; }
+  .btn-generate.not-ready { background: var(--surface2) !important; color: var(--text-dim); cursor: not-allowed; box-shadow: none !important; }
+  .btn-generate:active:not(.not-ready) { transform: scale(.97); }
   .hint { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 10px; }
 
   .result-box {
@@ -180,12 +189,12 @@
   .settings-panel {
     width: 100%; max-width: 480px; background: var(--surface);
     border-radius: 24px 24px 0 0; padding: 24px 20px 40px;
-    animation: fadeUp .3s ease; max-height: 85vh; overflow-y: auto;
+    animation: fadeUp .3s ease; max-height: 90vh; overflow-y: auto;
   }
   .settings-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--surface3); margin: 0 auto 20px; }
   .settings-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
   .settings-subtitle { font-size: 13px; color: var(--text-sec); line-height: 1.5; margin-bottom: 18px; }
-  .settings-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; }
+  .settings-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; display: block; }
   .settings-input {
     width: 100%; padding: 12px 14px; border-radius: 12px;
     border: 1px solid var(--border); background: var(--surface2);
@@ -195,11 +204,11 @@
   .settings-input:focus { border-color: rgba(255,255,255,.15); }
   .settings-input::placeholder { color: var(--text-dim); }
 
-  .provider-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .provider-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
   .provider-tab {
-    flex: 1; padding: 12px; border-radius: 12px;
+    flex: 1; min-width: 90px; padding: 11px 8px; border-radius: 12px;
     border: 1px solid var(--border); background: var(--surface2);
-    color: var(--text-sec); font-size: 13px; font-weight: 600;
+    color: var(--text-sec); font-size: 12px; font-weight: 600;
     cursor: pointer; font-family: inherit; transition: all .2s; text-align: center;
   }
   .provider-tab.active { border-color: var(--purple); color: var(--purple); background: rgba(124,92,252,.1); }
@@ -235,16 +244,16 @@
   .key-banner-desc { font-size: 12px; color: var(--text-sec); line-height: 1.4; }
 
   .help-block {
-    margin-top: 16px; padding: 14px; border-radius: 12px;
+    margin-top: 14px; padding: 14px; border-radius: 12px;
     background: var(--surface2); border: 1px solid var(--border);
   }
-  .help-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-  .help-step { font-size: 12px; color: var(--text-sec); line-height: 1.6; margin-bottom: 4px; }
-  .help-link {
-    display: inline-block; margin-top: 8px; padding: 8px 14px;
-    border-radius: 10px; background: rgba(124,92,252,.15);
-    color: var(--purple); font-size: 12px; font-weight: 600;
-    text-decoration: none;
+  .help-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .help-step { font-size: 12px; color: var(--text-sec); line-height: 1.6; margin-bottom: 3px; }
+
+  .context-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .context-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    background: rgba(124,92,252,.15); color: var(--purple); letter-spacing: .5px;
   }
 
   ::-webkit-scrollbar { width: 3px; }
@@ -265,6 +274,7 @@ if (tg) {
   try { tg.setBackgroundColor('#0A0A0F'); } catch(e){}
 }
 
+// ===== STATE =====
 var state = {
   screen: 'home',
   activeMode: null,
@@ -273,56 +283,62 @@ var state = {
   streamedText: '',
   isGenerating: false,
   showSettings: false,
-  provider: localStorage.getItem('ai_provider') || 'openai',
+  provider: localStorage.getItem('ai_provider') || 'custom',
   openaiKey: localStorage.getItem('openai_key') || '',
   claudeKey: localStorage.getItem('claude_key') || '',
+  customKey: localStorage.getItem('custom_key') || '',
+  customUrl: localStorage.getItem('custom_url') || '',
+  customModel: localStorage.getItem('custom_model') || '',
   copied: false,
 };
 
-var firstRun = !state.openaiKey && !state.claudeKey;
+var firstRun = !state.openaiKey && !state.claudeKey && !state.customKey;
 
+// ===== MODES =====
 var MODES = [
   {
-    id: 'posts', title: 'Посты', subtitle: 'ИИ-копирайтер', icon: '\u270D\uFE0F',
+    id: 'posts', title: '\u041F\u043E\u0441\u0442\u044B', subtitle: '\u0418\u0418-\u043A\u043E\u043F\u0438\u0440\u0430\u0439\u0442\u0435\u0440', icon: '\u270D\uFE0F',
     color: '#FF6B35', gradient: 'linear-gradient(135deg, #FF6B35, #F7C948)',
-    desc: 'Прогревающие посты, сторис и контент-планы для запуска',
+    desc: '\u041F\u0440\u043E\u0433\u0440\u0435\u0432\u0430\u044E\u0449\u0438\u0435 \u043F\u043E\u0441\u0442\u044B, \u0441\u0442\u043E\u0440\u0438\u0441 \u0438 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u043B\u0430\u043D\u044B \u0434\u043B\u044F \u0437\u0430\u043F\u0443\u0441\u043A\u0430',
     fields: [
-      { key:'product', label:'Что запускаем?', ph:'Курс по таргету, марафон...', type:'text' },
-      { key:'audience', label:'Целевая аудитория', ph:'Женщины 25-35, предприниматели...', type:'text' },
-      { key:'tone', label:'Тон коммуникации', ph:'Дружеский, экспертный...', type:'text' },
-      { key:'stage', label:'Этап прогрева', type:'select', opts:['Знакомство с экспертом','Осознание проблемы','Демонстрация экспертности','Кейсы и результаты','Открытие продаж','Дожим и закрытие'] },
-      { key:'format', label:'Формат', type:'select', opts:['Пост в канал','Серия сторис','Рилс / сценарий','Email-рассылка','Контент-план на неделю'] },
+      { key:'product', label:'\u0427\u0442\u043E \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0435\u043C?', ph:'\u041A\u0443\u0440\u0441 \u043F\u043E \u0442\u0430\u0440\u0433\u0435\u0442\u0443, \u043C\u0430\u0440\u0430\u0444\u043E\u043D...', type:'text' },
+      { key:'audience', label:'\u0426\u0435\u043B\u0435\u0432\u0430\u044F \u0430\u0443\u0434\u0438\u0442\u043E\u0440\u0438\u044F', ph:'\u0416\u0435\u043D\u0449\u0438\u043D\u044B 25-35, \u043F\u0440\u0435\u0434\u043F\u0440\u0438\u043D\u0438\u043C\u0430\u0442\u0435\u043B\u0438...', type:'text' },
+      { key:'tone', label:'\u0422\u043E\u043D \u043A\u043E\u043C\u043C\u0443\u043D\u0438\u043A\u0430\u0446\u0438\u0438', ph:'\u0414\u0440\u0443\u0436\u0435\u0441\u043A\u0438\u0439, \u044D\u043A\u0441\u043F\u0435\u0440\u0442\u043D\u044B\u0439...', type:'text' },
+      { key:'stage', label:'\u042D\u0442\u0430\u043F \u043F\u0440\u043E\u0433\u0440\u0435\u0432\u0430', type:'select', opts:['\u0417\u043D\u0430\u043A\u043E\u043C\u0441\u0442\u0432\u043E \u0441 \u044D\u043A\u0441\u043F\u0435\u0440\u0442\u043E\u043C','\u041E\u0441\u043E\u0437\u043D\u0430\u043D\u0438\u0435 \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u044B','\u0414\u0435\u043C\u043E\u043D\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u044D\u043A\u0441\u043F\u0435\u0440\u0442\u043D\u043E\u0441\u0442\u0438','\u041A\u0435\u0439\u0441\u044B \u0438 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B','\u041E\u0442\u043A\u0440\u044B\u0442\u0438\u0435 \u043F\u0440\u043E\u0434\u0430\u0436','\u0414\u043E\u0436\u0438\u043C \u0438 \u0437\u0430\u043A\u0440\u044B\u0442\u0438\u0435'] },
+      { key:'format', label:'\u0424\u043E\u0440\u043C\u0430\u0442', type:'select', opts:['\u041F\u043E\u0441\u0442 \u0432 \u043A\u0430\u043D\u0430\u043B','\u0421\u0435\u0440\u0438\u044F \u0441\u0442\u043E\u0440\u0438\u0441','\u0420\u0438\u043B\u0441 / \u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0439','Email-\u0440\u0430\u0441\u0441\u044B\u043B\u043A\u0430','\u041A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u043B\u0430\u043D \u043D\u0430 \u043D\u0435\u0434\u0435\u043B\u044E'] },
     ],
-    system: 'Ты \u2014 эксперт-копирайтер по прогревам и запускам инфопродуктов. Пиши живо, с эмоциями, используй сторителлинг и триггеры. Никакого канцелярита. Текст должен цеплять с первой строки. Эмодзи уместно, но без перебора. Пиши на русском языке. Короткие абзацы, воздух между блоками.'
+    system: '\u0422\u044B \u2014 \u044D\u043A\u0441\u043F\u0435\u0440\u0442-\u043A\u043E\u043F\u0438\u0440\u0430\u0439\u0442\u0435\u0440 \u043F\u043E \u043F\u0440\u043E\u0433\u0440\u0435\u0432\u0430\u043C \u0438 \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u043C \u0438\u043D\u0444\u043E\u043F\u0440\u043E\u0434\u0443\u043A\u0442\u043E\u0432. \u041F\u0438\u0448\u0438 \u0436\u0438\u0432\u043E, \u0441 \u044D\u043C\u043E\u0446\u0438\u044F\u043C\u0438, \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439 \u0441\u0442\u043E\u0440\u0438\u0442\u0435\u043B\u043B\u0438\u043D\u0433 \u0438 \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u044B. \u041D\u0438\u043A\u0430\u043A\u043E\u0433\u043E \u043A\u0430\u043D\u0446\u0435\u043B\u044F\u0440\u0438\u0442\u0430. \u0422\u0435\u043A\u0441\u0442 \u0434\u043E\u043B\u0436\u0435\u043D \u0446\u0435\u043F\u043B\u044F\u0442\u044C \u0441 \u043F\u0435\u0440\u0432\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0438. \u042D\u043C\u043E\u0434\u0437\u0438 \u0443\u043C\u0435\u0441\u0442\u043D\u043E, \u043D\u043E \u0431\u0435\u0437 \u043F\u0435\u0440\u0435\u0431\u043E\u0440\u0430. \u041F\u0438\u0448\u0438 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C \u044F\u0437\u044B\u043A\u0435. \u041A\u043E\u0440\u043E\u0442\u043A\u0438\u0435 \u0430\u0431\u0437\u0430\u0446\u044B, \u0432\u043E\u0437\u0434\u0443\u0445 \u043C\u0435\u0436\u0434\u0443 \u0431\u043B\u043E\u043A\u0430\u043C\u0438.'
   },
   {
-    id: 'strategy', title: 'Стратегия', subtitle: 'ИИ-стратег', icon: '\uD83C\uDFAF',
+    id: 'strategy', title: '\u0421\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u044F', subtitle: '\u0418\u0418-\u0441\u0442\u0440\u0430\u0442\u0435\u0433', icon: '\uD83C\uDFAF',
     color: '#7C5CFC', gradient: 'linear-gradient(135deg, #7C5CFC, #00D4AA)',
-    desc: 'Пошаговая стратегия запуска с таймлайном и воронками',
+    desc: '\u041F\u043E\u0448\u0430\u0433\u043E\u0432\u0430\u044F \u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u044F \u0437\u0430\u043F\u0443\u0441\u043A\u0430 \u0441 \u0442\u0430\u0439\u043C\u043B\u0430\u0439\u043D\u043E\u043C \u0438 \u0432\u043E\u0440\u043E\u043D\u043A\u0430\u043C\u0438',
     fields: [
-      { key:'product', label:'Продукт', ph:'Название и описание...', type:'text' },
-      { key:'price', label:'Ценовой сегмент', ph:'5 000, 50 000, 150 000...', type:'text' },
-      { key:'audience', label:'Целевая аудитория', ph:'Кто ваш идеальный клиент?', type:'text' },
-      { key:'channels', label:'Площадки', type:'select', opts:['Telegram-канал','Instagram','YouTube','Email-база','Несколько площадок'] },
-      { key:'timeline', label:'Сроки запуска', type:'select', opts:['Экспресс (7 дней)','Стандарт (14 дней)','Полный цикл (21 день)','Длинный прогрев (30+ дней)'] },
-      { key:'budget', label:'Бюджет на трафик', ph:'0 (органика), 50 000...', type:'text' },
+      { key:'product', label:'\u041F\u0440\u043E\u0434\u0443\u043A\u0442', ph:'\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0438 \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435...', type:'text' },
+      { key:'price', label:'\u0426\u0435\u043D\u043E\u0432\u043E\u0439 \u0441\u0435\u0433\u043C\u0435\u043D\u0442', ph:'5 000, 50 000, 150 000...', type:'text' },
+      { key:'audience', label:'\u0426\u0435\u043B\u0435\u0432\u0430\u044F \u0430\u0443\u0434\u0438\u0442\u043E\u0440\u0438\u044F', ph:'\u041A\u0442\u043E \u0432\u0430\u0448 \u0438\u0434\u0435\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442?', type:'text' },
+      { key:'channels', label:'\u041F\u043B\u043E\u0449\u0430\u0434\u043A\u0438', type:'select', opts:['Telegram-\u043A\u0430\u043D\u0430\u043B','Instagram','YouTube','Email-\u0431\u0430\u0437\u0430','\u041D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u043F\u043B\u043E\u0449\u0430\u0434\u043E\u043A'] },
+      { key:'timeline', label:'\u0421\u0440\u043E\u043A\u0438 \u0437\u0430\u043F\u0443\u0441\u043A\u0430', type:'select', opts:['\u042D\u043A\u0441\u043F\u0440\u0435\u0441\u0441 (7 \u0434\u043D\u0435\u0439)','\u0421\u0442\u0430\u043D\u0434\u0430\u0440\u0442 (14 \u0434\u043D\u0435\u0439)','\u041F\u043E\u043B\u043D\u044B\u0439 \u0446\u0438\u043A\u043B (21 \u0434\u0435\u043D\u044C)','\u0414\u043B\u0438\u043D\u043D\u044B\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0432 (30+ \u0434\u043D\u0435\u0439)'] },
+      { key:'budget', label:'\u0411\u044E\u0434\u0436\u0435\u0442 \u043D\u0430 \u0442\u0440\u0430\u0444\u0438\u043A', ph:'0 (\u043E\u0440\u0433\u0430\u043D\u0438\u043A\u0430), 50 000...', type:'text' },
     ],
-    system: 'Ты \u2014 стратег по запускам инфопродуктов с опытом 50+ успешных запусков. Создавай детальные пошаговые стратегии с конкретными действиями на каждый день. Включай: воронку продаж, этапы прогрева, ключевые метрики, контент-план, точки касания. Конкретные рекомендации, а не абстрактные советы. Учитывай бюджет и сроки. Пиши на русском. Форматируй структурированно.'
+    system: '\u0422\u044B \u2014 \u0441\u0442\u0440\u0430\u0442\u0435\u0433 \u043F\u043E \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u043C \u0438\u043D\u0444\u043E\u043F\u0440\u043E\u0434\u0443\u043A\u0442\u043E\u0432 \u0441 \u043E\u043F\u044B\u0442\u043E\u043C 50+ \u0443\u0441\u043F\u0435\u0448\u043D\u044B\u0445 \u0437\u0430\u043F\u0443\u0441\u043A\u043E\u0432. \u0421\u043E\u0437\u0434\u0430\u0432\u0430\u0439 \u0434\u0435\u0442\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u043E\u0448\u0430\u0433\u043E\u0432\u044B\u0435 \u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u0438 \u0441 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u043C\u0438 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F\u043C\u0438 \u043D\u0430 \u043A\u0430\u0436\u0434\u044B\u0439 \u0434\u0435\u043D\u044C. \u0412\u043A\u043B\u044E\u0447\u0430\u0439: \u0432\u043E\u0440\u043E\u043D\u043A\u0443 \u043F\u0440\u043E\u0434\u0430\u0436, \u044D\u0442\u0430\u043F\u044B \u043F\u0440\u043E\u0433\u0440\u0435\u0432\u0430, \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u043C\u0435\u0442\u0440\u0438\u043A\u0438, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u043B\u0430\u043D, \u0442\u043E\u0447\u043A\u0438 \u043A\u0430\u0441\u0430\u043D\u0438\u044F. \u041A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0435 \u0440\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0430\u0446\u0438\u0438. \u041F\u0438\u0448\u0438 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C. \u0424\u043E\u0440\u043C\u0430\u0442\u0438\u0440\u0443\u0439 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E.'
   },
   {
-    id: 'presentation', title: 'Презентация', subtitle: 'ИИ-спикер', icon: '\uD83C\uDFA4',
+    id: 'presentation', title: '\u041F\u0440\u0435\u0437\u0435\u043D\u0442\u0430\u0446\u0438\u044F', subtitle: '\u0418\u0418-\u0441\u043F\u0438\u043A\u0435\u0440', icon: '\uD83C\uDFA4',
     color: '#FF3366', gradient: 'linear-gradient(135deg, #FF3366, #FF8C42)',
-    desc: 'Структура продающего вебинара с триггерами и CTA',
+    desc: '\u0421\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430 \u043F\u0440\u043E\u0434\u0430\u044E\u0449\u0435\u0433\u043E \u0432\u0435\u0431\u0438\u043D\u0430\u0440\u0430 \u0441 \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u0430\u043C\u0438 \u0438 CTA',
     fields: [
-      { key:'topic', label:'Тема вебинара', ph:'О чём будет вебинар?', type:'text' },
-      { key:'product', label:'Что продаём в конце?', ph:'Название и стоимость...', type:'text' },
-      { key:'duration', label:'Длительность', type:'select', opts:['45 минут','60 минут','90 минут','120 минут'] },
-      { key:'audience', label:'Аудитория вебинара', ph:'Кто придёт?', type:'text' },
-      { key:'style', label:'Формат', type:'select', opts:['Продающий вебинар','Мастер-класс + продажа','Разбор кейсов + оффер','Интенсив (серия)'] },
+      { key:'topic', label:'\u0422\u0435\u043C\u0430 \u0432\u0435\u0431\u0438\u043D\u0430\u0440\u0430', ph:'\u041E \u0447\u0451\u043C \u0431\u0443\u0434\u0435\u0442 \u0432\u0435\u0431\u0438\u043D\u0430\u0440?', type:'text' },
+      { key:'product', label:'\u0427\u0442\u043E \u043F\u0440\u043E\u0434\u0430\u0451\u043C \u0432 \u043A\u043E\u043D\u0446\u0435?', ph:'\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0438 \u0441\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C...', type:'text' },
+      { key:'duration', label:'\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C', type:'select', opts:['45 \u043C\u0438\u043D\u0443\u0442','60 \u043C\u0438\u043D\u0443\u0442','90 \u043C\u0438\u043D\u0443\u0442','120 \u043C\u0438\u043D\u0443\u0442'] },
+      { key:'audience', label:'\u0410\u0443\u0434\u0438\u0442\u043E\u0440\u0438\u044F \u0432\u0435\u0431\u0438\u043D\u0430\u0440\u0430', ph:'\u041A\u0442\u043E \u043F\u0440\u0438\u0434\u0451\u0442?', type:'text' },
+      { key:'style', label:'\u0424\u043E\u0440\u043C\u0430\u0442', type:'select', opts:['\u041F\u0440\u043E\u0434\u0430\u044E\u0449\u0438\u0439 \u0432\u0435\u0431\u0438\u043D\u0430\u0440','\u041C\u0430\u0441\u0442\u0435\u0440-\u043A\u043B\u0430\u0441\u0441 + \u043F\u0440\u043E\u0434\u0430\u0436\u0430','\u0420\u0430\u0437\u0431\u043E\u0440 \u043A\u0435\u0439\u0441\u043E\u0432 + \u043E\u0444\u0444\u0435\u0440','\u0418\u043D\u0442\u0435\u043D\u0441\u0438\u0432 (\u0441\u0435\u0440\u0438\u044F)'] },
     ],
-    system: 'Ты \u2014 эксперт по продающим вебинарам и презентациям. Создавай структуру вебинара слайд за слайдом с таймингом. Для каждого слайда: заголовок, тезисы, что говорить спикеру, триггеры и переходы. Включай: хук в начале, контентную часть, продающую часть с оффером, работу с возражениями, CTA. Пиши на русском. Делай живой и вовлекающей.'
+    system: '\u0422\u044B \u2014 \u044D\u043A\u0441\u043F\u0435\u0440\u0442 \u043F\u043E \u043F\u0440\u043E\u0434\u0430\u044E\u0449\u0438\u043C \u0432\u0435\u0431\u0438\u043D\u0430\u0440\u0430\u043C \u0438 \u043F\u0440\u0435\u0437\u0435\u043D\u0442\u0430\u0446\u0438\u044F\u043C. \u0421\u043E\u0437\u0434\u0430\u0432\u0430\u0439 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0443 \u0432\u0435\u0431\u0438\u043D\u0430\u0440\u0430 \u0441\u043B\u0430\u0439\u0434 \u0437\u0430 \u0441\u043B\u0430\u0439\u0434\u043E\u043C \u0441 \u0442\u0430\u0439\u043C\u0438\u043D\u0433\u043E\u043C. \u0414\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u0441\u043B\u0430\u0439\u0434\u0430: \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043E\u043A, \u0442\u0435\u0437\u0438\u0441\u044B, \u0447\u0442\u043E \u0433\u043E\u0432\u043E\u0440\u0438\u0442\u044C \u0441\u043F\u0438\u043A\u0435\u0440\u0443, \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u044B \u0438 \u043F\u0435\u0440\u0435\u0445\u043E\u0434\u044B. \u0412\u043A\u043B\u044E\u0447\u0430\u0439: \u0445\u0443\u043A \u0432 \u043D\u0430\u0447\u0430\u043B\u0435, \u043A\u043E\u043D\u0442\u0435\u043D\u0442\u043D\u0443\u044E \u0447\u0430\u0441\u0442\u044C, \u043F\u0440\u043E\u0434\u0430\u044E\u0449\u0443\u044E \u0447\u0430\u0441\u0442\u044C \u0441 \u043E\u0444\u0444\u0435\u0440\u043E\u043C, \u0440\u0430\u0431\u043E\u0442\u0443 \u0441 \u0432\u043E\u0437\u0440\u0430\u0436\u0435\u043D\u0438\u044F\u043C\u0438, CTA. \u041F\u0438\u0448\u0438 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C. \u0414\u0435\u043B\u0430\u0439 \u0436\u0438\u0432\u043E\u0439 \u0438 \u0432\u043E\u0432\u043B\u0435\u043A\u0430\u044E\u0449\u0435\u0439.'
   }
 ];
+
+// ===== API CALLS =====
 
 function callOpenAI(systemPrompt, userPrompt) {
   return fetch('https://api.openai.com/v1/chat/completions', {
@@ -335,8 +351,8 @@ function callOpenAI(systemPrompt, userPrompt) {
     })
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) {
-      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'Ошибка OpenAI: ' + res.status); }
-      catch(ex) { if (ex.message.indexOf('Ошибка') >= 0) throw ex; throw new Error('Ошибка OpenAI: ' + res.status + '. Проверьте ключ и баланс.'); }
+      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'OpenAI: ' + res.status); }
+      catch(ex) { if (ex.message.indexOf('OpenAI') >= 0) throw ex; throw new Error('OpenAI: ' + res.status); }
     });
     return res.json();
   }).then(function(data) { return data.choices[0].message.content; });
@@ -346,31 +362,67 @@ function callClaude(systemPrompt, userPrompt) {
   return fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': state.claudeKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
+      'Content-Type': 'application/json', 'x-api-key': state.claudeKey,
+      'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: systemPrompt,
+      model: 'claude-sonnet-4-20250514', max_tokens: 4000, system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     })
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) {
-      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'Ошибка Claude: ' + res.status); }
-      catch(ex) { if (ex.message.indexOf('Ошибка') >= 0) throw ex; throw new Error('Ошибка Claude: ' + res.status + '. Проверьте ключ.'); }
+      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'Claude: ' + res.status); }
+      catch(ex) { if (ex.message.indexOf('Claude') >= 0) throw ex; throw new Error('Claude: ' + res.status); }
     });
     return res.json();
   }).then(function(data) { return data.content.map(function(c) { return c.text || ''; }).join('\n'); });
 }
 
+function callCustom(systemPrompt, userPrompt) {
+  var url = state.customUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+  var model = state.customModel || 'gpt-4o-mini';
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.customKey },
+    body: JSON.stringify({
+      model: model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      max_tokens: 4000, temperature: 0.8,
+    })
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) {
+      try { var e = JSON.parse(t); throw new Error(e.error && e.error.message || 'API: ' + res.status); }
+      catch(ex) { if (ex.message.indexOf('API') >= 0) throw ex; throw new Error('API \u043E\u0448\u0438\u0431\u043A\u0430: ' + res.status + '. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 URL, \u043A\u043B\u044E\u0447 \u0438 \u043C\u043E\u0434\u0435\u043B\u044C.'); }
+    });
+    return res.json();
+  }).then(function(data) {
+    if (data.choices && data.choices[0]) return data.choices[0].message.content;
+    if (data.content) return data.content.map(function(c) { return c.text || ''; }).join('\n');
+    throw new Error('\u041D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B\u0439 \u0444\u043E\u0440\u043C\u0430\u0442 \u043E\u0442\u0432\u0435\u0442\u0430 API');
+  });
+}
+
+function getFilledCount() {
+  var count = 0;
+  var keys = Object.keys(state.formData);
+  for (var i = 0; i < keys.length; i++) {
+    var v = state.formData[keys[i]];
+    if (v && typeof v === 'string' && v.trim().length > 0) count++;
+  }
+  return count;
+}
+
+function hasApiKey() {
+  if (state.provider === 'openai') return !!state.openaiKey;
+  if (state.provider === 'claude') return !!state.claudeKey;
+  if (state.provider === 'custom') return !!state.customKey && !!state.customUrl;
+  return false;
+}
+
 function generate() {
   var mode = MODES.find(function(m) { return m.id === state.activeMode; });
   if (!mode) return;
-  var hasKey = state.provider === 'openai' ? !!state.openaiKey : !!state.claudeKey;
-  if (!hasKey) { state.showSettings = true; render(); return; }
+  if (!hasApiKey()) { state.showSettings = true; render(); return; }
 
   state.isGenerating = true;
   state.result = '';
@@ -378,35 +430,40 @@ function generate() {
   state.screen = 'result';
   render();
 
-  var userPrompt = mode.fields.map(function(f) {
+  var parts = mode.fields.map(function(f) {
     var v = state.formData[f.key];
     return v ? f.label + ': ' + v : null;
-  }).filter(Boolean).join('\n');
+  }).filter(Boolean);
 
-  var call = state.provider === 'openai' ? callOpenAI(mode.system, userPrompt) : callClaude(mode.system, userPrompt);
+  // Add custom context
+  if (state.formData._context && state.formData._context.trim()) {
+    parts.push('\n\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442:\n' + state.formData._context.trim());
+  }
+
+  var userPrompt = parts.join('\n');
+  var call;
+
+  if (state.provider === 'openai') call = callOpenAI(mode.system, userPrompt);
+  else if (state.provider === 'claude') call = callClaude(mode.system, userPrompt);
+  else call = callCustom(mode.system, userPrompt);
 
   call.then(function(text) {
     var i = 0;
     var iv = setInterval(function() {
       i += Math.floor(Math.random() * 4) + 2;
       if (i >= text.length) {
-        state.streamedText = text;
-        state.result = text;
-        state.isGenerating = false;
-        clearInterval(iv);
-      } else {
-        state.streamedText = text.slice(0, i);
-      }
+        state.streamedText = text; state.result = text;
+        state.isGenerating = false; clearInterval(iv);
+      } else { state.streamedText = text.slice(0, i); }
       render();
     }, 10);
   }).catch(function(err) {
-    state.streamedText = '\u274C ' + err.message + '\n\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u2190 \u0438 \u0437\u0430\u0442\u0435\u043C \u2699\uFE0F \u0447\u0442\u043E\u0431\u044B \u043F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C API-\u043A\u043B\u044E\u0447.';
-    state.result = 'error';
-    state.isGenerating = false;
-    render();
+    state.streamedText = '\u274C ' + err.message + '\n\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u2190 \u0438 \u0437\u0430\u0442\u0435\u043C \u2699\uFE0F \u0447\u0442\u043E\u0431\u044B \u043F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438.';
+    state.result = 'error'; state.isGenerating = false; render();
   });
 }
 
+// ===== DOM =====
 function h(tag, attrs) {
   var el = document.createElement(tag);
   var children = Array.prototype.slice.call(arguments, 2);
@@ -460,49 +517,97 @@ function parseMarkdown(text) {
   return frag;
 }
 
+// ===== UPDATE BUTTON STATE without full re-render =====
+function updateGenerateBtn() {
+  var btn = document.getElementById('gen-btn');
+  if (!btn) return;
+  var mode = MODES.find(function(m) { return m.id === state.activeMode; });
+  if (!mode) return;
+  var filled = getFilledCount();
+  if (filled >= 2) {
+    btn.className = 'btn-generate ready';
+    btn.style.background = mode.gradient;
+    btn.style.boxShadow = '0 8px 32px ' + mode.color + '30';
+    btn.disabled = false;
+  } else {
+    btn.className = 'btn-generate not-ready';
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+    btn.disabled = true;
+  }
+  var hint = document.getElementById('gen-hint');
+  if (hint) hint.textContent = filled >= 2 ? '\u0413\u043E\u0442\u043E\u0432\u043E \u043A \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438!' : '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u043C\u0438\u043D\u0438\u043C\u0443\u043C 2 \u043F\u043E\u043B\u044F';
+}
+
+// ===== RENDER =====
 function render() {
   var app = document.getElementById('app');
   app.innerHTML = '';
 
   var mode = MODES.find(function(m) { return m.id === state.activeMode; });
-  var hasKey = state.provider === 'openai' ? !!state.openaiKey : !!state.claudeKey;
+  var _hasKey = hasApiKey();
 
-  // SETTINGS OVERLAY
+  // ===== SETTINGS OVERLAY =====
   if (state.showSettings) {
     var overlay = h('div', { className: 'overlay', onClick: function(e) {
       if (e.target === e.currentTarget) { state.showSettings = false; render(); }
     }});
 
-    var keyInput = h('input', {
-      className: 'settings-input',
-      type: 'password',
-      placeholder: state.provider === 'openai' ? 'sk-...' : 'sk-ant-...',
-      value: state.provider === 'openai' ? state.openaiKey : state.claudeKey,
-    });
-    keyInput.addEventListener('input', function(e) {
-      if (state.provider === 'openai') state.openaiKey = e.target.value;
-      else state.claudeKey = e.target.value;
-    });
+    // Key input based on provider
+    var keyFields = [];
 
-    var helpSteps = state.provider === 'openai' ? [
-      h('div', { className: 'help-step' }, '1. \u041F\u0435\u0440\u0435\u0439\u0434\u0438\u0442\u0435 \u043D\u0430 platform.openai.com'),
-      h('div', { className: 'help-step' }, '2. \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0439\u0442\u0435\u0441\u044C \u0438\u043B\u0438 \u0432\u043E\u0439\u0434\u0438\u0442\u0435'),
-      h('div', { className: 'help-step' }, '3. API Keys \u2192 Create new secret key'),
-      h('div', { className: 'help-step' }, '4. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
-      h('a', { className: 'help-link', href: 'https://platform.openai.com/api-keys', target: '_blank' }, '\u2192 \u041E\u0442\u043A\u0440\u044B\u0442\u044C OpenAI'),
-    ] : [
-      h('div', { className: 'help-step' }, '1. \u041F\u0435\u0440\u0435\u0439\u0434\u0438\u0442\u0435 \u043D\u0430 console.anthropic.com'),
-      h('div', { className: 'help-step' }, '2. \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0439\u0442\u0435\u0441\u044C \u0438\u043B\u0438 \u0432\u043E\u0439\u0434\u0438\u0442\u0435'),
-      h('div', { className: 'help-step' }, '3. API Keys \u2192 Create Key'),
-      h('div', { className: 'help-step' }, '4. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
-      h('a', { className: 'help-link', href: 'https://console.anthropic.com/', target: '_blank' }, '\u2192 \u041E\u0442\u043A\u0440\u044B\u0442\u044C Anthropic'),
-    ];
+    if (state.provider === 'openai') {
+      var ki = h('input', { className: 'settings-input', type: 'password', placeholder: 'sk-...', value: state.openaiKey });
+      ki.addEventListener('input', function(e) { state.openaiKey = e.target.value; });
+      keyFields.push(
+        h('div', { style: { marginBottom: '14px' } },
+          h('label', { className: 'settings-label' }, 'API-\u043A\u043B\u044E\u0447 OpenAI'), ki
+        )
+      );
+    } else if (state.provider === 'claude') {
+      var ki2 = h('input', { className: 'settings-input', type: 'password', placeholder: 'sk-ant-...', value: state.claudeKey });
+      ki2.addEventListener('input', function(e) { state.claudeKey = e.target.value; });
+      keyFields.push(
+        h('div', { style: { marginBottom: '14px' } },
+          h('label', { className: 'settings-label' }, 'API-\u043A\u043B\u044E\u0447 Claude'), ki2
+        )
+      );
+    } else {
+      // Custom provider
+      var cu = h('input', { className: 'settings-input', type: 'text', placeholder: 'https://api.kie.ai \u0438\u043B\u0438 \u0434\u0440\u0443\u0433\u043E\u0439 URL', value: state.customUrl });
+      cu.addEventListener('input', function(e) { state.customUrl = e.target.value; });
+
+      var ck = h('input', { className: 'settings-input', type: 'password', placeholder: '\u0412\u0430\u0448 API-\u043A\u043B\u044E\u0447', value: state.customKey });
+      ck.addEventListener('input', function(e) { state.customKey = e.target.value; });
+
+      var cm = h('input', { className: 'settings-input', type: 'text', placeholder: 'gpt-4o-mini, claude-3-haiku \u0438\u043B\u0438 \u0434\u0440\u0443\u0433\u0430\u044F', value: state.customModel });
+      cm.addEventListener('input', function(e) { state.customModel = e.target.value; });
+
+      keyFields.push(
+        h('div', { style: { marginBottom: '14px' } },
+          h('label', { className: 'settings-label' }, 'URL \u0441\u0435\u0440\u0432\u0435\u0440\u0430 API'), cu,
+          h('div', { style: { fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' } }, '\u0411\u0435\u0437 /v1/chat/completions \u043D\u0430 \u043A\u043E\u043D\u0446\u0435')
+        ),
+        h('div', { style: { marginBottom: '14px' } },
+          h('label', { className: 'settings-label' }, 'API-\u043A\u043B\u044E\u0447'), ck
+        ),
+        h('div', { style: { marginBottom: '14px' } },
+          h('label', { className: 'settings-label' }, '\u041C\u043E\u0434\u0435\u043B\u044C (\u043D\u0435\u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E)'), cm
+        )
+      );
+    }
 
     var panel = h('div', { className: 'settings-panel' },
       h('div', { className: 'settings-handle' }),
-      h('div', { className: 'settings-title' }, '\u2699\uFE0F \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438'),
-      h('div', { className: 'settings-subtitle' }, '\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0418\u0418 \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 API-\u043A\u043B\u044E\u0447. \u041A\u043B\u044E\u0447 \u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435.'),
+      h('div', { className: 'settings-title' }, '\u2699\uFE0F \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 API'),
+      h('div', { className: 'settings-subtitle' }, '\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0418\u0418 \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447. \u041A\u043B\u044E\u0447 \u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435.'),
+
+      // Provider tabs - 3 options
       h('div', { className: 'provider-tabs' },
+        h('button', {
+          className: 'provider-tab' + (state.provider === 'custom' ? ' active' : ''),
+          onClick: function() { state.provider = 'custom'; localStorage.setItem('ai_provider', 'custom'); render(); }
+        }, '\uD83D\uDD17 \u0421\u0432\u043E\u0439 API'),
         h('button', {
           className: 'provider-tab' + (state.provider === 'openai' ? ' active' : ''),
           onClick: function() { state.provider = 'openai'; localStorage.setItem('ai_provider', 'openai'); render(); }
@@ -512,24 +617,40 @@ function render() {
           onClick: function() { state.provider = 'claude'; localStorage.setItem('ai_provider', 'claude'); render(); }
         }, '\uD83D\uDFE3 Claude'),
       ),
+
+      // Status
       h('div', { style: { marginBottom: '16px', fontSize: '13px' } },
-        h('span', { className: 'status-dot ' + (hasKey ? 'status-ok' : 'status-no') }),
-        hasKey ? '\u041A\u043B\u044E\u0447 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u2713' : '\u041A\u043B\u044E\u0447 \u043D\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D'
+        h('span', { className: 'status-dot ' + (_hasKey ? 'status-ok' : 'status-no') }),
+        _hasKey ? '\u041A\u043B\u044E\u0447 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u2713' : '\u041A\u043B\u044E\u0447 \u043D\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D'
       ),
-      h('div', { style: { marginBottom: '14px' } },
-        h('div', { className: 'settings-label' }, state.provider === 'openai' ? 'API-\u043A\u043B\u044E\u0447 OpenAI' : 'API-\u043A\u043B\u044E\u0447 Claude'),
-        keyInput
-      ),
+
+      keyFields,
+
+      // Help
       h('div', { className: 'help-block' },
-        h('div', { className: 'help-title' }, '\uD83D\uDCD6 \u041A\u0430\u043A \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043A\u043B\u044E\u0447:'),
-        helpSteps
+        h('div', { className: 'help-title' }, '\uD83D\uDCD6 \u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430'),
+        state.provider === 'custom' ? [
+          h('div', { className: 'help-step' }, '\u0414\u043B\u044F kie.ai: URL = https://api.kie.ai'),
+          h('div', { className: 'help-step' }, '\u0414\u043B\u044F proxyapi.ru: URL = https://api.proxyapi.ru'),
+          h('div', { className: 'help-step' }, '\u041F\u043E\u0434\u0445\u043E\u0434\u0438\u0442 \u043B\u044E\u0431\u043E\u0439 OpenAI-\u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u0439 API'),
+        ] : state.provider === 'openai' ? [
+          h('div', { className: 'help-step' }, '1. platform.openai.com \u2192 API Keys'),
+          h('div', { className: 'help-step' }, '2. Create new secret key'),
+          h('div', { className: 'help-step' }, '3. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
+        ] : [
+          h('div', { className: 'help-step' }, '1. console.anthropic.com \u2192 API Keys'),
+          h('div', { className: 'help-step' }, '2. Create Key'),
+          h('div', { className: 'help-step' }, '3. \u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0431\u0430\u043B\u0430\u043D\u0441 \u043E\u0442 $5'),
+        ]
       ),
+
       h('button', { className: 'btn-save', onClick: function() {
         localStorage.setItem('openai_key', state.openaiKey);
         localStorage.setItem('claude_key', state.claudeKey);
-        state.showSettings = false;
-        firstRun = false;
-        render();
+        localStorage.setItem('custom_key', state.customKey);
+        localStorage.setItem('custom_url', state.customUrl);
+        localStorage.setItem('custom_model', state.customModel);
+        state.showSettings = false; firstRun = false; render();
       }}, '\uD83D\uDCBE \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C')
     );
 
@@ -537,10 +658,10 @@ function render() {
     app.appendChild(overlay);
   }
 
-  // SETTINGS BUTTON ROW
+  // SETTINGS BUTTON
   var settingsRow = h('div', { className: 'settings-row' });
   settingsRow.appendChild(h('button', {
-    className: 'settings-btn' + (!hasKey ? ' needs-key' : ''),
+    className: 'settings-btn' + (!_hasKey ? ' needs-key' : ''),
     onClick: function() { state.showSettings = true; render(); }
   }, '\u2699\uFE0F'));
   app.appendChild(settingsRow);
@@ -564,7 +685,7 @@ function render() {
       h('div', { className: 'logo-label' }, 'Launch AI Studio'),
       h('div', { className: 'logo-heading' }, '\u0422\u0432\u043E\u0439 \u0418\u0418-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442'),
       h('div', { className: 'logo-heading' }, '\u0434\u043B\u044F \u0437\u0430\u043F\u0443\u0441\u043A\u043E\u0432'),
-      h('p', { className: 'logo-desc' }, '\u0412\u044B\u0431\u0435\u0440\u0438 \u0440\u0435\u0436\u0438\u043C \u0438 \u043F\u043E\u043B\u0443\u0447\u0438 \u0433\u043E\u0442\u043E\u0432\u044B\u0439 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u0437\u0430 \u043C\u0438\u043D\u0443\u0442\u0443')
+      h('p', { className: 'logo-desc' }, '\u0412\u044B\u0431\u0435\u0440\u0438 \u0440\u0435\u0436\u0438\u043C \u0438 \u043F\u043E\u043B\u0443\u0447\u0438 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u0437\u0430 \u043C\u0438\u043D\u0443\u0442\u0443')
     ));
   }
   app.appendChild(header);
@@ -573,14 +694,14 @@ function render() {
   var content = h('div', { style: { marginTop: '16px' } });
 
   if (state.screen === 'home') {
-    if (!hasKey) {
+    if (!_hasKey) {
       content.appendChild(h('div', {
         className: 'key-banner fade-up',
         onClick: function() { state.showSettings = true; render(); }
       },
         h('div', { className: 'key-banner-icon' }, '\uD83D\uDD11'),
         h('div', { className: 'key-banner-title' }, '\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0434\u043E\u0431\u0430\u0432\u044C\u0442\u0435 API-\u043A\u043B\u044E\u0447'),
-        h('div', { className: 'key-banner-desc' }, '\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0441\u044E\u0434\u0430, \u0447\u0442\u043E\u0431\u044B \u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0418\u0418. \u042D\u0442\u043E \u0437\u0430\u0439\u043C\u0451\u0442 2 \u043C\u0438\u043D\u0443\u0442\u044B.')
+        h('div', { className: 'key-banner-desc' }, '\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0441\u044E\u0434\u0430 \u0447\u0442\u043E\u0431\u044B \u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0418\u0418')
       ));
     }
 
@@ -589,7 +710,7 @@ function render() {
         className: 'mode-card fade-up',
         style: { animationDelay: (idx * .08) + 's', display: 'block', marginBottom: '14px' },
         onClick: function() {
-          if (!hasKey) { state.showSettings = true; render(); return; }
+          if (!_hasKey) { state.showSettings = true; render(); return; }
           state.activeMode = m.id; state.screen = 'form'; state.formData = {}; render();
         }
       },
@@ -608,11 +729,13 @@ function render() {
       ));
     });
 
+    var provName = state.provider === 'openai' ? 'OpenAI' : state.provider === 'claude' ? 'Claude' : '\u0421\u0432\u043E\u0439 API';
     content.appendChild(h('div', { style: { textAlign: 'center', marginTop: '16px' }, className: 'fade-up' },
-      h('span', { className: 'footer-badge' }, '\u26A1 ' + (state.provider === 'openai' ? 'OpenAI' : 'Claude'))
+      h('span', { className: 'footer-badge' }, '\u26A1 ' + provName)
     ));
 
   } else if (state.screen === 'form' && mode) {
+    // Regular fields
     mode.fields.forEach(function(f, idx) {
       var fw = h('div', { className: 'slide-in', style: { marginBottom: '16px', animationDelay: (idx * .04) + 's' } });
       fw.appendChild(h('div', { className: 'field-label' }, f.label));
@@ -630,7 +753,10 @@ function render() {
         fw.appendChild(chips);
       } else {
         var inp = h('input', { className: 'field-input', type: 'text', placeholder: f.ph || '', value: state.formData[f.key] || '' });
-        inp.addEventListener('input', function(e) { state.formData[f.key] = e.target.value; });
+        inp.addEventListener('input', function(e) {
+          state.formData[f.key] = e.target.value;
+          updateGenerateBtn();
+        });
         inp.addEventListener('focus', function() { inp.style.borderColor = mode.color + '50'; });
         inp.addEventListener('blur', function() { inp.style.borderColor = 'rgba(255,255,255,0.06)'; });
         fw.appendChild(inp);
@@ -638,14 +764,43 @@ function render() {
       content.appendChild(fw);
     });
 
-    var filled = Object.values(state.formData).filter(function(v) { return v && v.trim(); }).length;
-    content.appendChild(h('button', {
-      className: 'btn-generate',
-      style: { background: filled >= 2 ? mode.gradient : undefined, boxShadow: filled >= 2 ? '0 8px 32px ' + mode.color + '30' : undefined, marginTop: '24px' },
-      disabled: filled < 2 ? 'disabled' : undefined,
+    // FREE TEXT CONTEXT FIELD
+    var ctxWrap = h('div', { className: 'slide-in', style: { marginBottom: '16px', animationDelay: '0.3s' } });
+    var ctxLabelRow = h('div', { className: 'context-label-row' },
+      h('div', { className: 'field-label', style: { marginBottom: '0' } }, '\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442'),
+      h('span', { className: 'context-badge' }, '\u041D\u0415\u041E\u0411\u042F\u0417\u0410\u0422\u0415\u041B\u042C\u041D\u041E')
+    );
+    ctxWrap.appendChild(ctxLabelRow);
+    var ctxArea = h('textarea', {
+      className: 'field-textarea',
+      placeholder: '\u041B\u044E\u0431\u0430\u044F \u0434\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u0430\u044F \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F: \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u043F\u0440\u043E\u0434\u0443\u043A\u0442\u0430, \u043E\u0441\u043E\u0431\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u0430\u0443\u0434\u0438\u0442\u043E\u0440\u0438\u0438, \u043F\u0440\u0438\u043C\u0435\u0440\u044B, \u043F\u043E\u0436\u0435\u043B\u0430\u043D\u0438\u044F...',
+      value: state.formData._context || '',
+    });
+    ctxArea.addEventListener('input', function(e) {
+      state.formData._context = e.target.value;
+      updateGenerateBtn();
+    });
+    ctxArea.addEventListener('focus', function() { ctxArea.style.borderColor = mode.color + '50'; });
+    ctxArea.addEventListener('blur', function() { ctxArea.style.borderColor = 'rgba(255,255,255,0.06)'; });
+    ctxWrap.appendChild(ctxArea);
+    content.appendChild(ctxWrap);
+
+    // GENERATE BUTTON
+    var filled = getFilledCount();
+    var isReady = filled >= 2;
+    var genBtn = h('button', {
+      id: 'gen-btn',
+      className: 'btn-generate ' + (isReady ? 'ready' : 'not-ready'),
+      style: {
+        background: isReady ? mode.gradient : '',
+        boxShadow: isReady ? '0 8px 32px ' + mode.color + '30' : '',
+        marginTop: '24px',
+      },
       onClick: generate,
-    }, '\u26A1 \u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C'));
-    content.appendChild(h('p', { className: 'hint' }, '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u043C\u0438\u043D\u0438\u043C\u0443\u043C 2 \u043F\u043E\u043B\u044F'));
+    }, '\u26A1 \u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C');
+    if (!isReady) genBtn.disabled = true;
+    content.appendChild(genBtn);
+    content.appendChild(h('p', { id: 'gen-hint', className: 'hint' }, isReady ? '\u0413\u043E\u0442\u043E\u0432\u043E \u043A \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438!' : '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u043C\u0438\u043D\u0438\u043C\u0443\u043C 2 \u043F\u043E\u043B\u044F'));
 
   } else if (state.screen === 'result' && mode) {
     var box = h('div', { className: 'result-box slide-in' });
